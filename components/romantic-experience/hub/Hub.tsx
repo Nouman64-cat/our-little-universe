@@ -7,8 +7,10 @@ import { BottomNav } from "./BottomNav";
 import { GameTab } from "./GameTab";
 import { GardenTab } from "./GardenTab";
 import { HomeTab } from "./HomeTab";
+import { HubBackdrop } from "./HubBackdrop";
 import { SweetsTab } from "./SweetsTab";
 import { TeddyTab } from "./TeddyTab";
+import { ThemeProvider, ThemeToggle } from "./theme-context";
 import { UsTab } from "./UsTab";
 
 interface HubProps {
@@ -20,19 +22,24 @@ export function Hub({ onReplayJourney }: HubProps) {
   const [tab, setTab] = useState<HubTab>("home");
 
   return (
-    <div className="relative">
-      <AnimatePresence mode="wait">
-        {tab === "home" && (
-          <HomeTab key="home" onNavigate={setTab} onReplayJourney={onReplayJourney} />
-        )}
-        {tab === "game" && <GameTab key="game" />}
-        {tab === "sweets" && <SweetsTab key="sweets" />}
-        {tab === "garden" && <GardenTab key="garden" />}
-        {tab === "teddy" && <TeddyTab key="teddy" />}
-        {tab === "us" && <UsTab key="us" />}
-      </AnimatePresence>
+    <ThemeProvider>
+      <div className="relative min-h-dvh text-ink">
+        <HubBackdrop />
+        {tab !== "game" && <ThemeToggle />}
 
-      <BottomNav active={tab} onChange={setTab} />
-    </div>
+        <AnimatePresence mode="wait">
+          {tab === "home" && (
+            <HomeTab key="home" onNavigate={setTab} onReplayJourney={onReplayJourney} />
+          )}
+          {tab === "game" && <GameTab key="game" />}
+          {tab === "sweets" && <SweetsTab key="sweets" />}
+          {tab === "garden" && <GardenTab key="garden" />}
+          {tab === "teddy" && <TeddyTab key="teddy" />}
+          {tab === "us" && <UsTab key="us" />}
+        </AnimatePresence>
+
+        <BottomNav active={tab} onChange={setTab} />
+      </div>
+    </ThemeProvider>
   );
 }

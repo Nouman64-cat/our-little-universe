@@ -47,7 +47,7 @@ export function UsTab() {
         <AnimatePresence mode="wait">
           <motion.article
             key={letterIndex}
-            className="rounded-3xl border border-white/12 bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-6 backdrop-blur-md"
+            className="rounded-3xl border border-hairline bg-surface p-6 backdrop-blur-md"
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
@@ -71,7 +71,7 @@ export function UsTab() {
               type="button"
               onClick={() => step(-1)}
               aria-label="Previous letter"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
             >
               ←
             </button>
@@ -82,7 +82,7 @@ export function UsTab() {
               type="button"
               onClick={() => step(1)}
               aria-label="Next letter"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
             >
               →
             </button>
@@ -96,12 +96,13 @@ export function UsTab() {
           <span className="text-xs text-ink-faint">{copy.hub.us.momentsHint}</span>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4">
+        <div className="rounded-3xl border border-hairline bg-surface p-4">
           <svg viewBox="0 0 300 170" className="w-full">
             <path
               d={linePath}
               fill="none"
-              stroke="rgba(255,255,255,0.18)"
+              stroke="var(--color-ink-faint)"
+              strokeOpacity="0.45"
               strokeWidth="1"
               strokeDasharray="2 4"
             />
@@ -116,7 +117,11 @@ export function UsTab() {
                     cx={x}
                     cy={y}
                     r={selected ? 4.5 : 3}
-                    fill={index < moments.length ? "#ffb8d6" : "rgba(255,255,255,0.3)"}
+                    fill={
+                      index < moments.length
+                        ? "var(--color-rose-bright)"
+                        : "color-mix(in srgb, var(--color-ink-faint) 45%, transparent)"
+                    }
                     style={{
                       filter: selected
                         ? "drop-shadow(0 0 6px rgba(255,158,196,0.9))"

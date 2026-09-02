@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Atmosphere — deep plum with a warm pink cast */
+  /* Atmosphere — deep plum with a warm pink cast (dark is the default) */
   --color-canvas: #0d0912;
   --color-canvas-raised: #1a1024;
 
@@ -19,13 +19,61 @@
   --color-honey: #f0d29b;
   --color-leaf: #8fb89c;
 
+  /* Semantic surfaces — theme-aware translucent fills & hairlines. Prefer
+     these over ad-hoc `white/x` so a screen reads right in both themes. */
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-surface-2: rgba(255, 255, 255, 0.1);
+  --color-hairline: rgba(255, 255, 255, 0.1);
+  --color-hairline-strong: rgba(255, 255, 255, 0.16);
+
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     sans-serif;
   --font-display: var(--font-fraunces), ui-serif, "Iowan Old Style", Georgia,
     serif;
 }
 
+/*
+ * Theme scopes. The journey is always dark and doesn't opt in; the hub wraps
+ * itself in `.theme-light` / `.theme-dark` (see `theme-context.tsx`) so the
+ * whole subtree — including its fixed backdrop — resolves the right tokens.
+ * `.theme-dark` restates the defaults so an explicit choice always wins.
+ */
+.theme-dark {
+  color-scheme: dark;
+}
+
+.theme-light {
+  color-scheme: light;
+
+  --color-canvas: #fbf3f7;
+  --color-canvas-raised: #ffffff;
+
+  --color-ink: #33253b;
+  --color-ink-muted: #665472;
+  --color-ink-faint: #857191;
+
+  --color-rose: #d85f97;
+  --color-rose-bright: #c44d86;
+  --color-petal: #e79ac0;
+  --color-blush: #e7bdd4;
+  --color-lavender: #7c5cd6;
+  --color-honey: #b1832f;
+  --color-leaf: #558a6c;
+
+  --color-surface: rgba(53, 40, 60, 0.045);
+  --color-surface-2: rgba(53, 40, 60, 0.08);
+  --color-hairline: rgba(53, 40, 60, 0.12);
+  --color-hairline-strong: rgba(53, 40, 60, 0.2);
+
+  --lily-stroke: rgba(120, 84, 122, 0.4);
+}
+
 @layer base {
+  :root {
+    /* Hairline drawn on the lily petals; darkens under `.theme-light`. */
+    --lily-stroke: rgba(255, 255, 255, 0.4);
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;

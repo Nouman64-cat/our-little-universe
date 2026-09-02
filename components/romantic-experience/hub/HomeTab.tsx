@@ -103,7 +103,7 @@ export function HomeTab({ onNavigate, onReplayJourney }: HomeTabProps) {
           {...fade(0.56)}
           type="button"
           onClick={() => onNavigate("us")}
-          className="group flex w-full max-w-[20rem] items-center gap-4 rounded-[1.6rem] border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] px-5 py-4 text-left backdrop-blur-md transition-colors hover:from-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+          className="group flex w-full max-w-[20rem] items-center gap-4 rounded-[1.6rem] border border-hairline bg-surface px-5 py-4 text-left backdrop-blur-md transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose/15">
             <Envelope />
@@ -137,7 +137,11 @@ export function HomeTab({ onNavigate, onReplayJourney }: HomeTabProps) {
           type="button"
           onClick={() => onNavigate("garden")}
           aria-label="Visit the garden"
-          className="mt-10 w-full max-w-[22rem] rounded-2xl px-2 pt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+          className="mt-10 w-full max-w-[22rem] overflow-hidden rounded-[1.4rem] border border-hairline px-3 pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+          style={{
+            background:
+              "linear-gradient(180deg, color-mix(in srgb, var(--color-lavender) 14%, transparent) 0%, transparent 62%)",
+          }}
         >
           <div className="flex items-end justify-center gap-1">
             {gardenLilies.length > 0 ? (
@@ -161,14 +165,13 @@ export function HomeTab({ onNavigate, onReplayJourney }: HomeTabProps) {
             )}
           </div>
           <div
-            className="mt-1 h-px w-full rounded-full"
+            className="-mx-3 mt-1 h-4"
             style={{
               background:
-                "linear-gradient(to right, transparent, var(--color-leaf), transparent)",
-              boxShadow: "0 2px 12px -2px rgba(143,184,156,0.5)",
+                "linear-gradient(180deg, color-mix(in srgb, var(--color-leaf) 55%, transparent), color-mix(in srgb, var(--color-leaf) 18%, transparent))",
             }}
           />
-          <p className="mt-2 text-center text-xs text-ink-faint" suppressHydrationWarning>
+          <p className="mt-2 pb-1 text-center text-xs text-ink-faint" suppressHydrationWarning>
             {copy.hub.home.gardenCaption(streak, blooms.length)}
           </p>
         </motion.button>

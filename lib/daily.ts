@@ -36,6 +36,30 @@ export function pickByKey<T>(items: readonly T[], key: string): T {
   return items[hashString(key) % items.length];
 }
 
+/** Where the sun sits right now — drives the garden sky. */
+export type SkyPhase = "dawn" | "day" | "dusk" | "night";
+
+/** Coarse time-of-day bucket used to paint the garden's sky and light. */
+export function skyPhase(date = new Date()): SkyPhase {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 8) return "dawn";
+  if (hour >= 8 && hour < 17) return "day";
+  if (hour >= 17 && hour < 20) return "dusk";
+  return "night";
+}
+
+/**
+ * How far through the daylight arc we are, 0 → 1 (0 at 5am, 1 at 8pm). Used to
+ * place the sun/moon along its curve. Clamped, so pre-dawn and late night sit
+ * at the ends rather than wrapping.
+ */
+export function sunProgress(date = new Date()): number {
+  const minutes = date.getHours() * 60 + date.getMinutes();
+  const start = 5 * 60;
+  const end = 20 * 60;
+  return Math.min(1, Math.max(0, (minutes - start) / (end - start)));
+}
+
 /** Time-of-day greeting prefix. */
 export function greetingPrefix(date = new Date()): string {
   const hour = date.getHours();

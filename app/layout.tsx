@@ -21,8 +21,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0c0912",
-  colorScheme: "dark",
+  // Dark by default (the journey); the hub keeps this <meta> in step with its
+  // own light/dark choice at runtime — see `theme-context.tsx`.
+  themeColor: "#0d0912",
+  colorScheme: "light dark",
   // Let the layout paint under the notch / home indicator.
   viewportFit: "cover",
 };

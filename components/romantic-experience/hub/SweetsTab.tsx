@@ -63,8 +63,8 @@ export function SweetsTab() {
 
       <div className="relative mx-auto aspect-[4/5] w-full max-w-[19rem]">
         {/* jar */}
-        <div className="absolute inset-x-2 top-6 bottom-0 rounded-b-[2.5rem] rounded-t-2xl border border-white/15 bg-white/[0.06] backdrop-blur-md" />
-        <div className="absolute inset-x-8 top-1 h-6 rounded-full border border-white/15 bg-white/10" />
+        <div className="absolute inset-x-2 top-6 bottom-0 rounded-b-[2.5rem] rounded-t-2xl border border-hairline-strong bg-surface backdrop-blur-md" />
+        <div className="absolute inset-x-8 top-1 h-6 rounded-full border border-hairline-strong bg-surface-2" />
         <div className="absolute left-6 top-10 bottom-6 w-3 rounded-full bg-gradient-to-b from-white/25 to-transparent" />
 
         {/* candies */}
@@ -111,7 +111,7 @@ export function SweetsTab() {
         label="A sweet"
       >
         {open && (
-          <div className="rounded-3xl border border-white/12 bg-canvas-raised/95 p-7 text-center shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)]">
+          <div className="rounded-3xl border border-hairline bg-canvas-raised/95 p-7 text-center shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)]">
             <motion.div
               className="mx-auto mb-5 w-20"
               initial={reduceMotion ? { opacity: 0 } : { opacity: 0, rotate: -30, scale: 0.6 }}

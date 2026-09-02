@@ -47,7 +47,7 @@ export function GlowButton({
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/70 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas",
           variant === "solid"
             ? "bg-rose/15 text-ink border border-rose/40 shadow-[0_0_30px_-8px_rgba(255,158,196,0.6)] hover:bg-rose/25"
-            : "bg-white/5 text-ink-muted border border-white/10 hover:bg-white/10 hover:text-ink",
+            : "bg-surface text-ink-muted border border-hairline hover:bg-surface-2 hover:text-ink",
         ].join(" ")}
       >
         {children}

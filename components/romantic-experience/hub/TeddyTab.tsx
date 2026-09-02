@@ -97,7 +97,7 @@ export function TeddyTab() {
         </AnimatePresence>
 
         {/* sign */}
-        <div className="mb-6 min-h-[3rem] max-w-[16rem] rounded-2xl border border-white/12 bg-white/[0.06] px-4 py-2.5 text-center backdrop-blur-md">
+        <div className="mb-6 min-h-[3rem] max-w-[16rem] rounded-2xl border border-hairline bg-surface px-4 py-2.5 text-center backdrop-blur-md">
           <AnimatePresence mode="wait">
             <motion.p
               key={line}

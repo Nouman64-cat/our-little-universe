@@ -37,7 +37,7 @@ export function LilyIcon({ className, title }: LilyIconProps) {
         </radialGradient>
       </defs>
 
-      <g fill={`url(#${gradientId})`} stroke="rgba(255,255,255,0.35)" strokeWidth={0.75}>
+      <g fill={`url(#${gradientId})`} stroke="var(--lily-stroke)" strokeWidth={0.75}>
         {PETAL_ANGLES.map((angle) => (
           <path
             key={angle}

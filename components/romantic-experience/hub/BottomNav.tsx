@@ -23,7 +23,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <nav
       aria-label="Sections"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-canvas/85 backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-canvas/85 backdrop-blur-xl"
     >
       <ul className="mx-auto flex max-w-md items-stretch px-1 pb-[env(safe-area-inset-bottom)]">
         {TABS.map((tab) => {
