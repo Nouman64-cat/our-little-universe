@@ -34,20 +34,21 @@ export const STAGE_CHAPTER: Record<ExperienceStage, Chapter> = {
 /** All user-facing copy, kept in one place so the tone stays consistent. */
 export const copy = {
   landing: {
-    kicker: "for you",
+    // Rendered as a soft, letter-style address above the title, e.g. "chuchu,".
+    address: `${NICKNAME},`,
     title: "I made you something.",
     // The intro line under the title is AI-varied — see `lib/content.ts`.
     cta: "Start ♡",
   },
   result: {
     score: (n: number) => `You collected ${n} ${n === 1 ? "heart" : "hearts"}.`,
-    reveal: "Unfortunately, I already gave you all of mine. ♡",
+    // The teasing line under the score is AI-varied — see `lib/content.ts`.
     cta: "Keep going →",
   },
   scratch: {
     title: "There's something under here…",
     surface: "Scratch me ♡",
-    message: "I'd choose you in every lifetime. ♡",
+    // The hidden message is AI-varied — see `lib/content.ts`.
     fallback: "Reveal it",
     cta: "One more thing…",
   },
@@ -57,14 +58,14 @@ export const copy = {
     released: "Hold the heart",
   },
   final: {
-    line1: "Still choosing you.",
-    line2: "Today. Tomorrow. Every version of us.",
+    // The two closing lines are AI-varied — see `lib/content.ts`.
     // Shown once the hub is unlocked, in place of "start again".
     enterHub: "Step inside ♡",
   },
   hub: {
     nav: {
       home: "Home",
+      game: "Play",
       sweets: "Sweets",
       garden: "Garden",
       teddy: "Teddy",
@@ -72,6 +73,15 @@ export const copy = {
     },
     home: {
       replay: "revisit the journey",
+    },
+    game: {
+      title: "Catch the hearts",
+      subtitle: "fifteen seconds. no pressure.",
+      start: "Play ♡",
+      again: "Play again",
+      done: "done",
+      stats: (plays: number, hearts: number) =>
+        `${plays} ${plays === 1 ? "round" : "rounds"} · ${hearts} caught in all`,
     },
     sweets: {
       title: "The sweet jar",

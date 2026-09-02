@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence } from "motion/react";
 import type { HubTab } from "@/types/experience";
 import { BottomNav } from "./BottomNav";
+import { GameTab } from "./GameTab";
 import { GardenTab } from "./GardenTab";
 import { HomeTab } from "./HomeTab";
 import { SweetsTab } from "./SweetsTab";
@@ -24,6 +25,7 @@ export function Hub({ onReplayJourney }: HubProps) {
         {tab === "home" && (
           <HomeTab key="home" onNavigate={setTab} onReplayJourney={onReplayJourney} />
         )}
+        {tab === "game" && <GameTab key="game" />}
         {tab === "sweets" && <SweetsTab key="sweets" />}
         {tab === "garden" && <GardenTab key="garden" />}
         {tab === "teddy" && <TeddyTab key="teddy" />}

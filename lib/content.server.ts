@@ -20,6 +20,9 @@ const USER_PROMPT = `Return a JSON object with exactly these keys, each an array
 - "intros": 6 items. One gentle sentence each that could introduce a small game. Reference tone: "First, I need you to catch something…". Max ~10 words.
 - "gameHints": 5 items. 2 to 4 words, a soft instruction to tap falling hearts.
 - "whispers": 16 items. 2 to 6 words, lowercase, no ending punctuation, like half-finished loving thoughts.
+- "resultReveals": 6 items. Teasing one-liners shown right after she's told how many hearts she caught in a game — the running joke is that he already gave her his heart / all of them. Warm, a little smug, max ~16 words. May end with "♡".
+- "scratchMessages": 6 items. Short romantic declarations to hide under a scratch-off card. Reference: "I'd choose you in every lifetime." Max ~14 words. May end with "♡".
+- "finales": 5 items. Each item is TWO lines joined by a newline ("\\n"): a very short first line (2–4 words) and a slightly longer second line about choosing her across time. Reference: "Still choosing you.\\nToday. Tomorrow. Every version of us.".
 - "greetings": 6 items. One short sentence to show when she opens the site, warm and low-key.
 - "sweets": 20 items. Small, specific reasons he adores her or things he loves that she does. Lowercase, no ending punctuation, max ~12 words.
 - "lilies": 16 items. Tiny notes to tuck inside a flower in a garden that grows as she visits. Lowercase, no ending punctuation, max ~12 words.
@@ -32,12 +35,19 @@ interface BucketSpec {
   max: number;
   maxWords: number;
   min: number;
+  /** Two-line entries ("line1\nline2") — word cap applies per line. */
+  twoLine?: boolean;
+  /** Always keep `FALLBACK_CONTENT[bucket][0]` first (his original wording). */
+  pinOriginal?: boolean;
 }
 
 const SPECS: Record<Bucket, BucketSpec> = {
-  intros: { max: 6, maxWords: 12, min: 3 },
+  intros: { max: 6, maxWords: 12, min: 3, pinOriginal: true },
   gameHints: { max: 5, maxWords: 5, min: 2 },
   whispers: { max: 16, maxWords: 7, min: 6 },
+  resultReveals: { max: 7, maxWords: 20, min: 3, pinOriginal: true },
+  scratchMessages: { max: 7, maxWords: 18, min: 3, pinOriginal: true },
+  finales: { max: 6, maxWords: 12, min: 2, twoLine: true, pinOriginal: true },
   greetings: { max: 6, maxWords: 14, min: 3 },
   sweets: { max: 20, maxWords: 14, min: 8 },
   lilies: { max: 16, maxWords: 14, min: 8 },
@@ -50,6 +60,14 @@ function cleanLine(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function withinWordCap(line: string, spec: BucketSpec): boolean {
+  const parts = spec.twoLine ? line.split("\n") : [line];
+  if (spec.twoLine && parts.length !== 2) return false;
+  return parts.every(
+    (part) => part.trim().length > 0 && part.trim().split(/\s+/).length <= spec.maxWords,
+  );
+}
+
 function resolveBucket(raw: unknown, bucket: Bucket): string[] {
   const spec = SPECS[bucket];
   const fallback = FALLBACK_CONTENT[bucket];
@@ -57,18 +75,23 @@ function resolveBucket(raw: unknown, bucket: Bucket): string[] {
     ? raw
         .map(cleanLine)
         .filter((line): line is string => line !== null)
-        .filter(
-          (line) => line.length <= 120 && line.split(/\s+/).length <= spec.maxWords,
-        )
+        .filter((line) => line.length <= 160 && withinWordCap(line, spec))
         .slice(0, spec.max)
     : [];
 
-  if (cleaned.length >= spec.min) return cleaned;
-  // Top up from the fallback, keeping whatever usable lines the model gave.
-  const merged = [...cleaned];
-  for (const line of fallback) {
-    if (merged.length >= spec.max) break;
-    if (!merged.includes(line)) merged.push(line);
+  let merged = cleaned;
+  if (cleaned.length < spec.min) {
+    // Top up from the fallback, keeping whatever usable lines the model gave.
+    merged = [...cleaned];
+    for (const line of fallback) {
+      if (merged.length >= spec.max) break;
+      if (!merged.includes(line)) merged.push(line);
+    }
+  }
+
+  if (spec.pinOriginal) {
+    const original = fallback[0];
+    merged = [original, ...merged.filter((line) => line !== original)].slice(0, spec.max);
   }
   return merged;
 }
@@ -79,6 +102,9 @@ function sanitizeContent(raw: unknown): SiteContent {
     intros: resolveBucket(record.intros, "intros"),
     gameHints: resolveBucket(record.gameHints, "gameHints"),
     whispers: resolveBucket(record.whispers, "whispers"),
+    resultReveals: resolveBucket(record.resultReveals, "resultReveals"),
+    scratchMessages: resolveBucket(record.scratchMessages, "scratchMessages"),
+    finales: resolveBucket(record.finales, "finales"),
     greetings: resolveBucket(record.greetings, "greetings"),
     sweets: resolveBucket(record.sweets, "sweets"),
     lilies: resolveBucket(record.lilies, "lilies"),

@@ -5,6 +5,7 @@ import { copy } from "@/lib/config";
 import { EASE_SOFT, lineVariants } from "@/lib/motion";
 import { LilyBloom } from "./LilyBloom";
 import { GlowButton } from "./ui/GlowButton";
+import { useWhispers } from "./whisper-context";
 
 interface FinalMessageProps {
   onEnterHub: () => void;
@@ -16,6 +17,8 @@ interface FinalMessageProps {
  * into the hub only fades in well afterwards.
  */
 export function FinalMessage({ onEnterHub }: FinalMessageProps) {
+  const { finale } = useWhispers();
+
   return (
     <div className="flex max-w-sm flex-col items-center text-center">
       <motion.div
@@ -30,23 +33,25 @@ export function FinalMessage({ onEnterHub }: FinalMessageProps) {
       </motion.div>
 
       <motion.p
+        suppressHydrationWarning
         className="font-display text-3xl font-medium leading-snug text-ink"
         variants={lineVariants}
         initial="initial"
         animate="animate"
         custom={0}
       >
-        {copy.final.line1}
+        {finale.line1}
       </motion.p>
 
       <motion.p
+        suppressHydrationWarning
         className="mt-5 text-lg leading-relaxed text-ink-muted"
         variants={lineVariants}
         initial="initial"
         animate="animate"
         custom={1}
       >
-        {copy.final.line2}
+        {finale.line2}
       </motion.p>
 
       <motion.div

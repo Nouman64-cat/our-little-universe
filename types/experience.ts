@@ -17,4 +17,4 @@ export type Chapter = 0 | 1 | 2;
 export type ExperienceMode = "journey" | "hub";
 
 /** The bottom-nav destinations inside the hub. */
-export type HubTab = "home" | "sweets" | "garden" | "teddy" | "us";
+export type HubTab = "home" | "game" | "sweets" | "garden" | "teddy" | "us";

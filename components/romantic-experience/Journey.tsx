@@ -12,6 +12,7 @@ import { Landing } from "./Landing";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { ScratchReveal } from "./ScratchReveal";
 import { Stage } from "./ui/Stage";
+import { useWhispers } from "./whisper-context";
 
 interface JourneyProps {
   /** Called from the final screen — hands off to the hub. */
@@ -23,6 +24,7 @@ interface JourneyProps {
  * transitions. No routing — just state and `AnimatePresence`.
  */
 export function Journey({ onFinish }: JourneyProps) {
+  const { gameHint, whispers, resultReveal } = useWhispers();
   const [stage, setStage] = useState<ExperienceStage>("landing");
   const [score, setScore] = useState(0);
 
@@ -51,13 +53,21 @@ export function Journey({ onFinish }: JourneyProps) {
 
         {stage === "game" && (
           <Stage key="game" bare>
-            <HeartGame onComplete={finishGame} />
+            <HeartGame
+              hint={gameHint}
+              whispers={whispers}
+              onComplete={finishGame}
+            />
           </Stage>
         )}
 
         {stage === "result" && (
           <Stage key="result">
-            <HeartGameResult score={score} onContinue={() => goTo("scratch")} />
+            <HeartGameResult
+              score={score}
+              reveal={resultReveal}
+              onContinue={() => goTo("scratch")}
+            />
           </Stage>
         )}
 

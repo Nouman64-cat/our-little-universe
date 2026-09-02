@@ -7,6 +7,7 @@ import { EASE_SOFT } from "@/lib/motion";
 import { useScratchCanvas } from "@/hooks/useScratchCanvas";
 import { GlowButton } from "./ui/GlowButton";
 import { HeartIcon } from "./ui/HeartIcon";
+import { useWhispers } from "./whisper-context";
 
 interface ScratchRevealProps {
   onContinue: () => void;
@@ -19,6 +20,7 @@ interface ScratchRevealProps {
  */
 export function ScratchReveal({ onContinue }: ScratchRevealProps) {
   const reduceMotion = useReducedMotion();
+  const { scratchMessage } = useWhispers();
   const [revealed, setRevealed] = useState(false);
 
   const { canvasRef, progress, revealNow } = useScratchCanvas({
@@ -55,6 +57,7 @@ export function ScratchReveal({ onContinue }: ScratchRevealProps) {
             <HeartIcon className="h-full w-full" />
           </motion.div>
           <motion.p
+            suppressHydrationWarning
             className="relative font-display text-xl font-medium leading-relaxed text-ink"
             animate={
               revealed
@@ -63,7 +66,7 @@ export function ScratchReveal({ onContinue }: ScratchRevealProps) {
             }
             transition={{ duration: 0.7, ease: EASE_SOFT }}
           >
-            {copy.scratch.message}
+            {scratchMessage}
           </motion.p>
         </div>
 

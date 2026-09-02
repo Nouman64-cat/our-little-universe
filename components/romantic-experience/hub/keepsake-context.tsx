@@ -26,7 +26,7 @@ import {
   type GardenBloom,
   type OluState,
 } from "@/lib/storage";
-import { pickOne } from "@/lib/utils";
+import { pickOne, sample } from "@/lib/utils";
 
 /** A garden lily with its note and a human date resolved. */
 export interface GardenLily extends GardenBloom {
@@ -55,6 +55,14 @@ interface KeepsakeValue {
   hugsSent: number;
   sendHug: () => void;
   randomTeddyLine: () => string;
+
+  /** Hearts game (hub). */
+  gamePlays: number;
+  gameHearts: number;
+  recordGame: (score: number) => void;
+  randomGameHint: () => string;
+  randomGameWhispers: () => string[];
+  randomResultReveal: () => string;
 
   letters: Letter[];
   letterOfDayIndex: number;
@@ -111,6 +119,27 @@ export function KeepsakeProvider({
     [content.teddyLines],
   );
 
+  const recordGame = useCallback((score: number) => {
+    setState((current) => ({
+      ...current,
+      gamePlays: current.gamePlays + 1,
+      gameHearts: current.gameHearts + score,
+    }));
+  }, []);
+
+  const randomGameHint = useCallback(
+    () => pickOne(content.gameHints),
+    [content.gameHints],
+  );
+  const randomGameWhispers = useCallback(
+    () => sample(content.whispers, 6),
+    [content.whispers],
+  );
+  const randomResultReveal = useCallback(
+    () => pickOne(content.resultReveals),
+    [content.resultReveals],
+  );
+
   const blooms = useMemo<GardenLily[]>(
     () =>
       state.gardenBlooms.map((bloom, index) => {
@@ -140,6 +169,12 @@ export function KeepsakeProvider({
       hugsSent: state.hugsSent,
       sendHug,
       randomTeddyLine,
+      gamePlays: state.gamePlays,
+      gameHearts: state.gameHearts,
+      recordGame,
+      randomGameHint,
+      randomGameWhispers,
+      randomResultReveal,
       letters: LETTERS,
       letterOfDayIndex: hashString(today) % LETTERS.length,
       moments: MOMENTS,
@@ -150,12 +185,18 @@ export function KeepsakeProvider({
       state.openedSweetDays,
       state.streak,
       state.hugsSent,
+      state.gamePlays,
+      state.gameHearts,
       blooms,
       takeSweetOfDay,
       randomSweet,
       plantLily,
       sendHug,
       randomTeddyLine,
+      recordGame,
+      randomGameHint,
+      randomGameWhispers,
+      randomResultReveal,
     ],
   );
 

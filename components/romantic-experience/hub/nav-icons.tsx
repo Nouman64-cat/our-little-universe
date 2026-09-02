@@ -25,6 +25,17 @@ function HomeIcon({ active }: IconProps) {
   );
 }
 
+function GameIcon({ active }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-6 w-6">
+      <path
+        d="M12 20s-7-4.6-7-9.6A3.9 3.9 0 0 1 12 7.6a3.9 3.9 0 0 1 7 2.8C19 15.4 12 20 12 20Z"
+        {...paint(active)}
+      />
+    </svg>
+  );
+}
+
 function SweetsIcon({ active }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className="h-6 w-6">
@@ -62,16 +73,15 @@ function TeddyIcon({ active }: IconProps) {
 function UsIcon({ active }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className="h-6 w-6">
-      <path
-        d="M12 20s-7-4.4-7-9.2A4 4 0 0 1 12 8a4 4 0 0 1 7 2.8C19 15.6 12 20 12 20Z"
-        {...paint(active)}
-      />
+      <rect x="3.5" y="6" width="17" height="12" rx="2.5" {...paint(active)} />
+      <path d="m4.5 7.5 7.5 5.5 7.5-5.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 export const NAV_ICONS: Record<HubTab, (props: IconProps) => ReactNode> = {
   home: HomeIcon,
+  game: GameIcon,
   sweets: SweetsIcon,
   garden: GardenIcon,
   teddy: TeddyIcon,

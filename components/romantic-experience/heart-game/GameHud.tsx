@@ -10,6 +10,8 @@ interface GameHudProps {
   endTime: number;
   score: number;
   onExpire: () => void;
+  /** Sit near the top edge (hub) instead of below the journey progress bar. */
+  embedded?: boolean;
 }
 
 const TOTAL_SECONDS = Math.round(GAME_DURATION_MS / 1000);
@@ -65,10 +67,13 @@ function Countdown({ endTime, onExpire }: { endTime: number; onExpire: () => voi
   );
 }
 
-function GameHudComponent({ endTime, score, onExpire }: GameHudProps) {
+function GameHudComponent({ endTime, score, onExpire, embedded = false }: GameHudProps) {
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-[calc(env(safe-area-inset-top)+4.25rem)] z-20 flex items-center justify-between px-5"
+      className={[
+        "pointer-events-none absolute inset-x-0 z-20 flex items-center justify-between px-5",
+        embedded ? "top-2" : "top-[calc(env(safe-area-inset-top)+4.25rem)]",
+      ].join(" ")}
       aria-live="polite"
     >
       <Countdown endTime={endTime} onExpire={onExpire} />

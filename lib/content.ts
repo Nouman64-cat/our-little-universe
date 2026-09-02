@@ -13,6 +13,21 @@ export interface SiteContent {
   gameHints: string[];
   /** Half-finished loving thoughts that drift past during the game. */
   whispers: string[];
+  /**
+   * Teasing one-liners revealed after the hearts-game score — the joke being
+   * that he already gave her his. Index 0 is the original, always kept.
+   */
+  resultReveals: string[];
+  /**
+   * Short romantic declarations hidden under the scratch card. Index 0 is the
+   * original, always kept.
+   */
+  scratchMessages: string[];
+  /**
+   * The closing message — each entry is two lines separated by "\n". Index 0 is
+   * the original, always kept.
+   */
+  finales: string[];
   /** Second line under the time-of-day greeting on the hub home screen. */
   greetings: string[];
   /** What's inside a candy in the sweets jar — a reason, a nudge, a tiny compliment. */
@@ -56,6 +71,30 @@ export const FALLBACK_CONTENT: SiteContent = {
     "lucky, and knowing it",
     "your hand, then everything else",
     "petals open slower than this",
+  ],
+  resultReveals: [
+    "Unfortunately, I already gave you all of mine. ♡",
+    "Impressive. Sadly, mine's been yours for a while now. ♡",
+    "Good hands. Shame — you already hold the only one that counts. ♡",
+    "Nice haul. Mine was spoken for the day I met you. ♡",
+    "You're quick. Too late for mine, though — it's yours. ♡",
+    "Not bad. Mine? Already packed up and moved in with you. ♡",
+    "Careful with those. The important one's non-refundable, and it's yours. ♡",
+  ],
+  scratchMessages: [
+    "I'd choose you in every lifetime. ♡",
+    "Every version of this story still ends with you. ♡",
+    "Given every choice again, still you. Every single time. ♡",
+    "You're the answer I keep arriving at. ♡",
+    "In every life where I get to pick — I pick you. ♡",
+    "Of all the ways it could have gone, I want the one with you. ♡",
+  ],
+  finales: [
+    "Still choosing you.\nToday. Tomorrow. Every version of us.",
+    "Still you.\nThis morning, tonight, and whatever comes after.",
+    "Choosing you again.\nQuietly, on purpose, every ordinary day.",
+    "It's still you.\nThe easy answer, and the one I'd give forever.",
+    "You, again.\nNow, later, and every version I get to keep.",
   ],
   greetings: [
     "the day got better just now.",

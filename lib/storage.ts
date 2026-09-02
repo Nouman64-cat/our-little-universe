@@ -18,6 +18,10 @@ export interface OluState {
   gardenBlooms: GardenBloom[];
   openedSweetDays: string[];
   hugsSent: number;
+  /** Times she's played the hearts game from the hub. */
+  gamePlays: number;
+  /** Running total of hearts caught in the hub game. */
+  gameHearts: number;
 }
 
 export const DEFAULT_STATE: OluState = {
@@ -28,6 +32,8 @@ export const DEFAULT_STATE: OluState = {
   gardenBlooms: [],
   openedSweetDays: [],
   hugsSent: 0,
+  gamePlays: 0,
+  gameHearts: 0,
 };
 
 const STORAGE_KEY = "olu:v1";

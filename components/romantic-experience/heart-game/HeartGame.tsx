@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import { GAME_DURATION_MS, HEART_SPAWN_INTERVAL_MS } from "@/lib/config";
 import { createId, haptic, pickOne, randomBetween } from "@/lib/utils";
-import { useWhispers } from "../whisper-context";
 import { FallingHeart } from "./FallingHeart";
 import { GameHud } from "./GameHud";
 import { ParticleBurst } from "./ParticleBurst";
@@ -14,6 +13,12 @@ import type { BurstData, FallingHeartData, HeartTone } from "./heart-game.types"
 interface HeartGameProps {
   /** Receives the final tally once the 15 seconds are up. */
   onComplete: (score: number) => void;
+  /** The "tap the hearts" line at the bottom. */
+  hint: string;
+  /** Faint drifting lines shown mid-playfield. */
+  whispers: string[];
+  /** Fill the parent instead of the viewport (used inside the hub tab). */
+  embedded?: boolean;
 }
 
 const TONES: HeartTone[] = ["rose", "lavender", "blush"];
@@ -39,9 +44,13 @@ function createHeart(): FallingHeartData {
  * with organic variation; tapping one pops it and scores a point. Never
  * competitive: the result screen is warm regardless of the count.
  */
-export function HeartGame({ onComplete }: HeartGameProps) {
+export function HeartGame({
+  onComplete,
+  hint,
+  whispers,
+  embedded = false,
+}: HeartGameProps) {
   const reduceMotion = useReducedMotion();
-  const { gameHint, whispers } = useWhispers();
   const playfieldRef = useRef<HTMLDivElement>(null);
 
   const [endTime] = useState(() => Date.now() + GAME_DURATION_MS);
@@ -93,9 +102,12 @@ export function HeartGame({ onComplete }: HeartGameProps) {
 
   const handleExpire = useCallback(() => {
     setPhase("ending");
-    // Let the last hearts drift a moment before the cinematic hand-off.
-    expireTimeoutRef.current = setTimeout(() => onComplete(scoreRef.current), 900);
-  }, [onComplete]);
+    // Let the last hearts drift a moment before the hand-off.
+    expireTimeoutRef.current = setTimeout(
+      () => onComplete(scoreRef.current),
+      embedded ? 550 : 900,
+    );
+  }, [onComplete, embedded]);
 
   useEffect(() => {
     return () => {
@@ -131,14 +143,27 @@ export function HeartGame({ onComplete }: HeartGameProps) {
   return (
     <div
       ref={playfieldRef}
-      className="relative h-dvh w-full touch-none select-none overflow-hidden"
+      className={[
+        "relative w-full touch-none select-none overflow-hidden",
+        embedded ? "h-full" : "h-dvh",
+      ].join(" ")}
     >
-      <GameHud endTime={endTime} score={score} onExpire={handleExpire} />
+      <GameHud
+        endTime={endTime}
+        score={score}
+        onExpire={handleExpire}
+        embedded={embedded}
+      />
 
       <Whispers lines={whispers} />
 
-      <p className="pointer-events-none absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+2rem)] text-center text-xs uppercase tracking-[0.3em] text-ink-faint">
-        {gameHint}
+      <p
+        className={[
+          "pointer-events-none absolute inset-x-0 text-center text-xs uppercase tracking-[0.3em] text-ink-faint",
+          embedded ? "bottom-4" : "bottom-[calc(env(safe-area-inset-bottom)+2rem)]",
+        ].join(" ")}
+      >
+        {hint}
       </p>
 
       {playHeight > 0 &&

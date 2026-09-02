@@ -11,7 +11,7 @@ interface BottomNavProps {
   onChange: (tab: HubTab) => void;
 }
 
-const TABS: HubTab[] = ["home", "sweets", "garden", "teddy", "us"];
+const TABS: HubTab[] = ["home", "game", "sweets", "garden", "teddy", "us"];
 
 /**
  * The persistent bottom navigation. Glass bar, five thumb-sized targets, a
@@ -25,7 +25,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
       aria-label="Sections"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-canvas/85 backdrop-blur-xl"
     >
-      <ul className="mx-auto flex max-w-md items-stretch px-2 pb-[env(safe-area-inset-bottom)]">
+      <ul className="mx-auto flex max-w-md items-stretch px-1 pb-[env(safe-area-inset-bottom)]">
         {TABS.map((tab) => {
           const Icon = NAV_ICONS[tab];
           const isActive = tab === active;
@@ -39,7 +39,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
                 }}
                 aria-current={isActive ? "page" : undefined}
                 className={[
-                  "flex min-h-[58px] w-full flex-col items-center justify-center gap-1 rounded-2xl pt-1.5 transition-colors",
+                  "flex min-h-[58px] w-full flex-col items-center justify-center gap-1 rounded-2xl px-0.5 pt-1.5 transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60",
                   isActive ? "text-rose" : "text-ink-faint hover:text-ink-muted",
                 ].join(" ")}
@@ -54,7 +54,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
                   )}
                   <Icon active={isActive} />
                 </span>
-                <span className="text-[10px] font-medium tracking-wide">
+                <span className="text-[10px] font-medium leading-none tracking-tight">
                   {copy.hub.nav[tab]}
                 </span>
               </button>
