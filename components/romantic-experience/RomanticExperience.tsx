@@ -1,98 +1,92 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { AnimatePresence } from "motion/react";
-import { STAGE_CHAPTER } from "@/lib/config";
-import type { WhisperPool } from "@/lib/whispers";
-import type { ExperienceStage } from "@/types/experience";
+import { useCallback, useState, useSyncExternalStore } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import type { SiteContent } from "@/lib/content";
+import { loadState, saveState } from "@/lib/storage";
+import type { ExperienceMode } from "@/types/experience";
 import { AmbientBackground } from "./AmbientBackground";
-import { FinalMessage } from "./FinalMessage";
-import { HeartGame } from "./heart-game/HeartGame";
-import { HeartGameResult } from "./HeartGameResult";
-import { HoldToUnlock } from "./HoldToUnlock";
-import { Landing } from "./Landing";
-import { ProgressIndicator } from "./ProgressIndicator";
-import { ScratchReveal } from "./ScratchReveal";
-import { Stage } from "./ui/Stage";
-import { WhisperProvider, useWhispers } from "./whisper-context";
+import { Journey } from "./Journey";
+import { HeartIcon } from "./ui/HeartIcon";
+import { WhisperProvider } from "./whisper-context";
+import { Hub } from "./hub/Hub";
+import { KeepsakeProvider } from "./hub/keepsake-context";
+
+/** No external notifications — the value only changes via our own actions below. */
+const noopSubscribe = () => () => {};
 
 /**
- * Orchestrates the whole journey: a single client component holding the current
- * stage and the mini-game score, swapping screens with a cinematic transition.
- * No routing, no reloads — just state.
+ * Top level. Reads (once, on the client via `useSyncExternalStore`) whether the
+ * journey has already been completed, and shows the hub or the first-run
+ * journey accordingly. Until that client read resolves, only the ambient
+ * background and a soft pulse are shown, so the wait reads as the scene coming
+ * into focus rather than a blank load.
  */
-export function RomanticExperience({ whisperPool }: { whisperPool: WhisperPool }) {
-  return (
-    <WhisperProvider pool={whisperPool}>
-      <ExperienceFlow />
-    </WhisperProvider>
+export function RomanticExperience({ content }: { content: SiteContent }) {
+  const persisted = useSyncExternalStore<ExperienceMode | null>(
+    noopSubscribe,
+    () => (loadState().journeyComplete ? "hub" : "journey"),
+    () => null,
   );
-}
 
-function ExperienceFlow() {
-  const { reshuffle } = useWhispers();
-  const [stage, setStage] = useState<ExperienceStage>("landing");
-  const [score, setScore] = useState(0);
+  const [override, setOverride] = useState<ExperienceMode | null>(null);
+  const mode = override ?? persisted;
 
-  const goTo = useCallback((next: ExperienceStage) => setStage(next), []);
-
-  const finishGame = useCallback((finalScore: number) => {
-    setScore(finalScore);
-    setStage("result");
+  const enterHub = useCallback(() => {
+    saveState({ ...loadState(), journeyComplete: true });
+    setOverride("hub");
   }, []);
 
-  const restart = useCallback(() => {
-    setScore(0);
-    setStage("landing");
-    reshuffle();
-  }, [reshuffle]);
+  const replayJourney = useCallback(() => setOverride("journey"), []);
 
   return (
     <main className="relative min-h-dvh w-full overflow-x-hidden">
       <AmbientBackground />
 
-      {stage !== "landing" && (
-        <ProgressIndicator
-          chapter={STAGE_CHAPTER[stage]}
-          allComplete={stage === "final"}
-        />
-      )}
-
       <AnimatePresence mode="wait">
-        {stage === "landing" && (
-          <Stage key="landing">
-            <Landing onStart={() => goTo("game")} />
-          </Stage>
+        {mode === null && (
+          <motion.div
+            key="veil"
+            className="relative z-10 flex min-h-dvh items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.span
+              className="h-9 w-9 text-rose"
+              animate={{ scale: [1, 1.12, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              style={{ filter: "drop-shadow(0 0 16px rgba(255,158,196,0.6))" }}
+            >
+              <HeartIcon className="h-full w-full" />
+            </motion.span>
+          </motion.div>
         )}
 
-        {stage === "game" && (
-          <Stage key="game" bare>
-            <HeartGame onComplete={finishGame} />
-          </Stage>
+        {mode === "journey" && (
+          <motion.div
+            key="journey"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.6 } }}
+            exit={{ opacity: 0, transition: { duration: 0.4 } }}
+          >
+            <WhisperProvider content={content}>
+              <Journey onFinish={enterHub} />
+            </WhisperProvider>
+          </motion.div>
         )}
 
-        {stage === "result" && (
-          <Stage key="result">
-            <HeartGameResult score={score} onContinue={() => goTo("scratch")} />
-          </Stage>
-        )}
-
-        {stage === "scratch" && (
-          <Stage key="scratch">
-            <ScratchReveal onContinue={() => goTo("hold")} />
-          </Stage>
-        )}
-
-        {stage === "hold" && (
-          <Stage key="hold">
-            <HoldToUnlock onComplete={() => goTo("final")} />
-          </Stage>
-        )}
-
-        {stage === "final" && (
-          <Stage key="final">
-            <FinalMessage onRestart={restart} />
-          </Stage>
+        {mode === "hub" && (
+          <motion.div
+            key="hub"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.6 } }}
+            exit={{ opacity: 0, transition: { duration: 0.4 } }}
+          >
+            <KeepsakeProvider content={content}>
+              <Hub onReplayJourney={replayJourney} />
+            </KeepsakeProvider>
+          </motion.div>
         )}
       </AnimatePresence>
     </main>

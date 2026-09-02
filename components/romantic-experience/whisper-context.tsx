@@ -1,67 +1,47 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { sample } from "@/lib/utils";
-import type { WhisperPool } from "@/lib/whispers";
+import type { SiteContent } from "@/lib/content";
 
-interface ResolvedWhispers {
+interface JourneyCopy {
   /** Intro line for the landing screen. */
   intro: string;
   /** Prompt shown during the catching game. */
   gameHint: string;
   /** The subset of drifting lines chosen for this run. */
   whispers: string[];
-  /** Re-pick every line — called when the whole experience restarts. */
-  reshuffle: () => void;
 }
 
-const WhisperContext = createContext<ResolvedWhispers | null>(null);
+const WhisperContext = createContext<JourneyCopy | null>(null);
 
-type Picks = Omit<ResolvedWhispers, "reshuffle">;
-
-function pickAll(pool: WhisperPool): Picks {
+function pickJourneyCopy(content: SiteContent): JourneyCopy {
   return {
-    intro: sample(pool.intros, 1)[0] ?? pool.intros[0],
-    gameHint: sample(pool.gameHints, 1)[0] ?? pool.gameHints[0],
-    whispers: sample(pool.whispers, 6),
+    intro: sample(content.intros, 1)[0] ?? content.intros[0],
+    gameHint: sample(content.gameHints, 1)[0] ?? content.gameHints[0],
+    whispers: sample(content.whispers, 6),
   };
 }
 
 /**
- * Holds the ambient copy for the current run, chosen randomly from the pool.
- *
- * The pick happens in a state initializer, so the server and client can land on
- * different lines. Only `intro` is in the server-rendered HTML (the game screens
- * mount later), and it carries `suppressHydrationWarning` where it's rendered —
- * a deliberately varying decorative line, exactly what that opt-out is for.
+ * Holds the ambient copy for one run of the journey, chosen randomly from the
+ * pool. The pick happens in a state initializer, so server and client can land
+ * on different lines; only `intro` reaches the server HTML and it carries
+ * `suppressHydrationWarning` where it's rendered. A fresh mount (e.g. replaying
+ * from the hub) re-picks automatically.
  */
 export function WhisperProvider({
-  pool,
+  content,
   children,
 }: {
-  pool: WhisperPool;
+  content: SiteContent;
   children: ReactNode;
 }) {
-  const [picks, setPicks] = useState<Picks>(() => pickAll(pool));
-
-  const reshuffle = useCallback(() => setPicks(pickAll(pool)), [pool]);
-
-  const value = useMemo<ResolvedWhispers>(
-    () => ({ ...picks, reshuffle }),
-    [picks, reshuffle],
-  );
-
-  return <WhisperContext.Provider value={value}>{children}</WhisperContext.Provider>;
+  const [copy] = useState<JourneyCopy>(() => pickJourneyCopy(content));
+  return <WhisperContext.Provider value={copy}>{children}</WhisperContext.Provider>;
 }
 
-export function useWhispers(): ResolvedWhispers {
+export function useWhispers(): JourneyCopy {
   const context = useContext(WhisperContext);
   if (!context) {
     throw new Error("useWhispers must be used within a WhisperProvider");

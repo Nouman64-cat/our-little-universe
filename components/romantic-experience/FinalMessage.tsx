@@ -7,15 +7,15 @@ import { LilyBloom } from "./LilyBloom";
 import { GlowButton } from "./ui/GlowButton";
 
 interface FinalMessageProps {
-  onRestart: () => void;
+  onEnterHub: () => void;
 }
 
 /**
  * The closing screen. A lily opens above the message — the flower she loves —
- * then the two lines arrive one at a time with room to breathe; the "start
- * again" button only fades in well afterwards.
+ * then the two lines arrive one at a time with room to breathe; the button
+ * into the hub only fades in well afterwards.
  */
-export function FinalMessage({ onRestart }: FinalMessageProps) {
+export function FinalMessage({ onEnterHub }: FinalMessageProps) {
   return (
     <div className="flex max-w-sm flex-col items-center text-center">
       <motion.div
@@ -55,8 +55,8 @@ export function FinalMessage({ onRestart }: FinalMessageProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: EASE_SOFT, delay: 3.4 }}
       >
-        <GlowButton onClick={onRestart} variant="ghost" ariaLabel="Start the experience again">
-          {copy.final.cta}
+        <GlowButton onClick={onEnterHub} ariaLabel="Step inside">
+          {copy.final.enterHub}
         </GlowButton>
       </motion.div>
     </div>

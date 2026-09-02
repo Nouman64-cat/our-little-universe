@@ -1,20 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  /* Atmosphere */
-  --color-canvas: #0c0912;
-  --color-canvas-raised: #171021;
+  /* Atmosphere — deep plum with a warm pink cast */
+  --color-canvas: #0d0912;
+  --color-canvas-raised: #1a1024;
 
   /* Ink */
-  --color-ink: #f5eef8;
-  --color-ink-muted: #b9a8cb;
-  --color-ink-faint: #877696;
+  --color-ink: #f6eef7;
+  --color-ink-muted: #c1abcf;
+  --color-ink-faint: #90788f;
 
-  /* Accents */
+  /* Accents — pink leads, lavender supports, honey warms */
   --color-rose: #ff9ec4;
   --color-rose-bright: #ffb8d6;
-  --color-blush: #f7c9dd;
+  --color-petal: #ffc7de;
+  --color-blush: #f9d2e2;
   --color-lavender: #c1a6ff;
+  --color-honey: #f0d29b;
+  --color-leaf: #8fb89c;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     sans-serif;

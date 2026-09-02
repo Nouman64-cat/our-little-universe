@@ -1,7 +1,7 @@
 import { RomanticExperience } from "@/components/romantic-experience/RomanticExperience";
-import { getWhisperPool } from "@/lib/whispers.server";
+import { getSiteContent } from "@/lib/content.server";
 
 export default async function Home() {
-  const whisperPool = await getWhisperPool();
-  return <RomanticExperience whisperPool={whisperPool} />;
+  const content = await getSiteContent();
+  return <RomanticExperience content={content} />;
 }

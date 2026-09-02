@@ -1,0 +1,173 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { NICKNAME } from "@/lib/config";
+import type { SiteContent } from "@/lib/content";
+import {
+  formatMonthDay,
+  greetingPrefix,
+  hashString,
+  pickByKey,
+  todayKey,
+} from "@/lib/daily";
+import { LETTERS, MOMENTS, type Letter, type Moment } from "@/lib/keepsakes";
+import {
+  applyDailyVisit,
+  loadState,
+  saveState,
+  type GardenBloom,
+  type OluState,
+} from "@/lib/storage";
+import { pickOne } from "@/lib/utils";
+
+/** A garden lily with its note and a human date resolved. */
+export interface GardenLily extends GardenBloom {
+  id: string;
+  note: string;
+  label: string;
+}
+
+interface KeepsakeValue {
+  nickname: string;
+
+  /** "good morning" / "up late" … */
+  timeGreeting: string;
+  /** The softer second line under it. */
+  greetingLine: string;
+
+  sweetOfDay: string;
+  sweetTaken: boolean;
+  takeSweetOfDay: () => void;
+  randomSweet: () => string;
+
+  blooms: GardenLily[];
+  streak: number;
+  plantLily: () => void;
+
+  hugsSent: number;
+  sendHug: () => void;
+  randomTeddyLine: () => string;
+
+  letters: Letter[];
+  letterOfDayIndex: number;
+  moments: Moment[];
+}
+
+const KeepsakeContext = createContext<KeepsakeValue | null>(null);
+
+/**
+ * Owns the hub's device-persisted state (`localStorage`) and derives the
+ * once-a-day content from it. The hub only ever mounts on the client (after
+ * `RomanticExperience`'s client-side check), so the state initializer can read
+ * `localStorage` directly and fold in today's visit — no hydration gap.
+ */
+export function KeepsakeProvider({
+  content,
+  children,
+}: {
+  content: SiteContent;
+  children: ReactNode;
+}) {
+  const today = todayKey();
+  const [state, setState] = useState<OluState>(() =>
+    applyDailyVisit(loadState(), today),
+  );
+
+  // Persist every change, including today's freshly added lily on first render.
+  useEffect(() => {
+    saveState(state);
+  }, [state]);
+
+  const takeSweetOfDay = useCallback(() => {
+    setState((current) =>
+      current.openedSweetDays.includes(today)
+        ? current
+        : { ...current, openedSweetDays: [...current.openedSweetDays, today] },
+    );
+  }, [today]);
+
+  const plantLily = useCallback(() => {
+    setState((current) => ({
+      ...current,
+      gardenBlooms: [...current.gardenBlooms, { date: today, kind: "planted" }],
+    }));
+  }, [today]);
+
+  const sendHug = useCallback(() => {
+    setState((current) => ({ ...current, hugsSent: current.hugsSent + 1 }));
+  }, []);
+
+  const randomSweet = useCallback(() => pickOne(content.sweets), [content.sweets]);
+  const randomTeddyLine = useCallback(
+    () => pickOne(content.teddyLines),
+    [content.teddyLines],
+  );
+
+  const blooms = useMemo<GardenLily[]>(
+    () =>
+      state.gardenBlooms.map((bloom, index) => {
+        const id = `${bloom.date}-${bloom.kind}-${index}`;
+        return {
+          ...bloom,
+          id,
+          note: pickByKey(content.lilies, id),
+          label: formatMonthDay(bloom.date),
+        };
+      }),
+    [state.gardenBlooms, content.lilies],
+  );
+
+  const value = useMemo<KeepsakeValue>(
+    () => ({
+      nickname: NICKNAME,
+      timeGreeting: greetingPrefix(),
+      greetingLine: pickByKey(content.greetings, today),
+      sweetOfDay: pickByKey(content.sweets, today),
+      sweetTaken: state.openedSweetDays.includes(today),
+      takeSweetOfDay,
+      randomSweet,
+      blooms,
+      streak: state.streak,
+      plantLily,
+      hugsSent: state.hugsSent,
+      sendHug,
+      randomTeddyLine,
+      letters: LETTERS,
+      letterOfDayIndex: hashString(today) % LETTERS.length,
+      moments: MOMENTS,
+    }),
+    [
+      content,
+      today,
+      state.openedSweetDays,
+      state.streak,
+      state.hugsSent,
+      blooms,
+      takeSweetOfDay,
+      randomSweet,
+      plantLily,
+      sendHug,
+      randomTeddyLine,
+    ],
+  );
+
+  return (
+    <KeepsakeContext.Provider value={value}>{children}</KeepsakeContext.Provider>
+  );
+}
+
+export function useKeepsakes(): KeepsakeValue {
+  const context = useContext(KeepsakeContext);
+  if (!context) {
+    throw new Error("useKeepsakes must be used within a KeepsakeProvider");
+  }
+  return context;
+}
