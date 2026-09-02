@@ -68,8 +68,18 @@ interface KeepsakeValue {
   randomResultReveal: () => string;
 
   letters: Letter[];
+  /** Which letter to surface first: the earliest unopened, or the day's pick. */
   letterOfDayIndex: number;
+  /** Indices of the letters she has opened. */
+  readLetters: number[];
+  /** First letter index she hasn't opened yet, or `null` once all are read. */
+  firstUnreadLetter: number | null;
+  /** How many distinct letters she has opened. */
+  lettersReadCount: number;
+  markLetterRead: (index: number) => void;
   moments: Moment[];
+  /** A moment to show on arrival, reshuffled each visit to this provider. */
+  momentOfVisit: number;
 }
 
 const KeepsakeContext = createContext<KeepsakeValue | null>(null);
@@ -116,6 +126,19 @@ export function KeepsakeProvider({
     setState((current) => ({ ...current, hugsSent: current.hugsSent + 1 }));
   }, []);
 
+  const markLetterRead = useCallback((index: number) => {
+    setState((current) =>
+      current.readLetters.includes(index)
+        ? current
+        : { ...current, readLetters: [...current.readLetters, index] },
+    );
+  }, []);
+
+  // One moment to greet her with, chosen once per mount of the hub.
+  const [momentOfVisit] = useState(() =>
+    Math.floor(Math.random() * Math.max(1, MOMENTS.length)),
+  );
+
   const randomSweet = useCallback(() => pickOne(content.sweets), [content.sweets]);
   const randomTeddyLine = useCallback(
     () => pickOne(content.teddyLines),
@@ -157,6 +180,13 @@ export function KeepsakeProvider({
     [state.gardenBlooms, content.lilies],
   );
 
+  const firstUnreadLetter = useMemo(() => {
+    for (let i = 0; i < LETTERS.length; i += 1) {
+      if (!state.readLetters.includes(i)) return i;
+    }
+    return null;
+  }, [state.readLetters]);
+
   const value = useMemo<KeepsakeValue>(
     () => ({
       nickname: NICKNAME,
@@ -183,7 +213,12 @@ export function KeepsakeProvider({
       randomResultReveal,
       letters: LETTERS,
       letterOfDayIndex: hashString(today) % LETTERS.length,
+      readLetters: state.readLetters,
+      firstUnreadLetter,
+      lettersReadCount: state.readLetters.length,
+      markLetterRead,
       moments: MOMENTS,
+      momentOfVisit,
     }),
     [
       content,
@@ -194,6 +229,10 @@ export function KeepsakeProvider({
       state.hugsSent,
       state.gamePlays,
       state.gameHearts,
+      state.readLetters,
+      firstUnreadLetter,
+      markLetterRead,
+      momentOfVisit,
       blooms,
       takeSweetOfDay,
       randomSweet,

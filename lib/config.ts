@@ -74,8 +74,11 @@ export const copy = {
     home: {
       replay: "revisit the journey",
       day: (n: number) => (n === 1 ? "day one" : `day ${n}`),
-      letterCard: "a letter, for today",
-      letterHint: "unopened",
+      letterCard: "a letter, unopened",
+      letterCardRead: "your letters",
+      letterHint: (sealed: number) =>
+        sealed === 1 ? "one still sealed" : `${sealed} still sealed`,
+      letterHintDone: "all opened — yours to reread",
       sweetLink: (taken: boolean) =>
         taken ? "the jar is open — take another →" : "or unwrap today's sweet →",
       gardenCaption: (streak: number, count: number) =>
@@ -97,6 +100,9 @@ export const copy = {
       subtitle: "one a day is yours. the rest, whenever.",
       ofTheDay: "today's sweet",
       taken: "you've had today's — help yourself to more",
+      glowing: "today's sweet is glowing",
+      shakeHint: "tap the glass to shake it",
+      tag: "for you",
       another: "have another",
       close: "close the jar",
     },
@@ -115,6 +121,9 @@ export const copy = {
     us: {
       title: "Us",
       letterLabel: "a letter for today",
+      letterProgress: (read: number, total: number) =>
+        read >= total ? "every letter opened" : `${read} of ${total} opened`,
+      allRead: "you've opened them all. they stay here — reread any.",
       momentsTitle: "our moments",
       momentsHint: "tap a star",
     },

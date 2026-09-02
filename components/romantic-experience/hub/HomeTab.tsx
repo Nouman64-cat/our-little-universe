@@ -14,12 +14,22 @@ interface HomeTabProps {
   onReplayJourney: () => void;
 }
 
-/** A small envelope glyph for the letter card. */
+/** A sealed envelope — shown while there's still a letter to open. */
 function Envelope() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5 text-rose" aria-hidden>
       <rect x="3" y="6" width="18" height="12.5" rx="2.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <path d="m4 7.5 8 6 8-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** An opened envelope — once every letter has been read. */
+function OpenEnvelope() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink-faint" aria-hidden>
+      <path d="M3 10.5v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="m3 10.5 9-6 9 6-9 6.2-9-6.2Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -38,9 +48,14 @@ export function HomeTab({ onNavigate, onReplayJourney }: HomeTabProps) {
     blooms,
     streak,
     sweetTaken,
+    letters,
+    firstUnreadLetter,
+    lettersReadCount,
   } = useKeepsakes();
 
   const gardenLilies = blooms.slice(-7);
+  const hasUnreadLetter = firstUnreadLetter !== null;
+  const sealedLetters = letters.length - lettersReadCount;
 
   const fade = (delay: number) => ({
     initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 },
@@ -105,15 +120,29 @@ export function HomeTab({ onNavigate, onReplayJourney }: HomeTabProps) {
           onClick={() => onNavigate("us")}
           className="group flex w-full max-w-[20rem] items-center gap-4 rounded-[1.6rem] border border-hairline bg-surface px-5 py-4 text-left backdrop-blur-md transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose/15">
-            <Envelope />
-          </span>
+          <motion.span
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+              hasUnreadLetter ? "bg-rose/15" : "bg-surface-2"
+            }`}
+            animate={
+              reduceMotion || !hasUnreadLetter
+                ? undefined
+                : { y: [0, -2, 0], rotate: [-3, 3, -3] }
+            }
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            {hasUnreadLetter ? <Envelope /> : <OpenEnvelope />}
+          </motion.span>
           <span className="min-w-0 flex-1">
             <span className="block font-display text-[15px] text-ink">
-              {copy.hub.home.letterCard}
+              {hasUnreadLetter
+                ? copy.hub.home.letterCard
+                : copy.hub.home.letterCardRead}
             </span>
             <span className="block text-xs italic text-ink-faint">
-              {copy.hub.home.letterHint}
+              {hasUnreadLetter
+                ? copy.hub.home.letterHint(sealedLetters)
+                : copy.hub.home.letterHintDone}
             </span>
           </span>
           <span className="text-ink-faint transition-transform group-hover:translate-x-0.5">

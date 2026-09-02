@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { copy } from "@/lib/config";
 import { EASE_SOFT } from "@/lib/motion";
+import { hashString } from "@/lib/daily";
 import { haptic } from "@/lib/utils";
 import { CandyIcon } from "../ui/CandyIcon";
 import { useKeepsakes } from "./keepsake-context";
@@ -28,6 +29,9 @@ const CANDIES: { x: number; y: number; rot: number; tone: Tone }[] = [
   { x: 70, y: 10, rot: -16, tone: "pink" },
 ];
 
+/** The glowing candy is the sweet of the day. */
+const DAY_CANDY_INDEX = 4;
+
 interface OpenSweet {
   text: string;
   ofDay: boolean;
@@ -38,83 +42,209 @@ export function SweetsTab() {
   const reduceMotion = useReducedMotion();
   const { sweetOfDay, sweetTaken, takeSweetOfDay, randomSweet } = useKeepsakes();
   const [open, setOpen] = useState<OpenSweet | null>(null);
+  const [flyingIndex, setFlyingIndex] = useState<number | null>(null);
+  const [shaking, setShaking] = useState(false);
 
-  // The glowing candy is the sweet of the day.
-  const dayCandyIndex = 4;
-
+  const jarControls = useAnimationControls();
   const jarCandies = useMemo(() => CANDIES, []);
 
-  const openDaySweet = () => {
-    haptic(8);
-    if (!sweetTaken) takeSweetOfDay();
-    setOpen({ text: sweetOfDay, ofDay: true });
+  const revealSweet = (sweet: OpenSweet) => {
+    if (reduceMotion) {
+      setOpen(sweet);
+      return;
+    }
+    window.setTimeout(() => setOpen(sweet), 440);
   };
 
-  const openRandomSweet = () => {
+  const takeCandy = (index: number) => {
+    if (flyingIndex !== null || open) return;
+    const isDay = index === DAY_CANDY_INDEX;
+    haptic(isDay ? 8 : 6);
+    setFlyingIndex(index);
+    if (isDay && !sweetTaken) takeSweetOfDay();
+    revealSweet({
+      text: isDay ? sweetOfDay : randomSweet(),
+      ofDay: isDay,
+    });
+  };
+
+  const openAnother = () => {
     haptic(6);
     setOpen({ text: randomSweet(), ofDay: false });
   };
 
+  const closeOverlay = () => {
+    setOpen(null);
+    setFlyingIndex(null);
+  };
+
+  const shakeJar = () => {
+    if (flyingIndex !== null) return;
+    haptic([6, 24]);
+    if (!reduceMotion) {
+      jarControls.start({
+        rotate: [0, -3, 2.6, -2, 1.2, 0],
+        x: [0, -4, 4, -3, 2, 0],
+        transition: { duration: 0.55, ease: "easeInOut" },
+      });
+    }
+    setShaking(true);
+    window.setTimeout(() => setShaking(false), 560);
+  };
+
+  const lidTilt =
+    open || shaking
+      ? { rotate: -15, y: -16, x: 7 }
+      : sweetTaken
+        ? { rotate: -5, y: -3, x: 2 }
+        : { rotate: 0, y: 0, x: 0 };
+
   return (
     <TabScreen title={copy.hub.sweets.title} subtitle={copy.hub.sweets.subtitle}>
       <p className="mb-4 text-sm text-ink-faint" suppressHydrationWarning>
-        {sweetTaken ? copy.hub.sweets.taken : `${copy.hub.sweets.ofTheDay} is glowing`}
+        {sweetTaken ? copy.hub.sweets.taken : copy.hub.sweets.glowing}
       </p>
 
       <div className="relative mx-auto aspect-[4/5] w-full max-w-[19rem]">
-        {/* jar */}
-        <div className="absolute inset-x-2 top-6 bottom-0 rounded-b-[2.5rem] rounded-t-2xl border border-hairline-strong bg-surface backdrop-blur-md" />
-        <div className="absolute inset-x-8 top-1 h-6 rounded-full border border-hairline-strong bg-surface-2" />
-        <div className="absolute left-6 top-10 bottom-6 w-3 rounded-full bg-gradient-to-b from-white/25 to-transparent" />
+        <motion.div className="absolute inset-0" animate={jarControls}>
+          {/* jar body + glass shine */}
+          <div className="absolute inset-x-2 top-6 bottom-0 overflow-hidden rounded-b-[2.5rem] rounded-t-2xl border border-hairline-strong bg-surface backdrop-blur-md">
+            <div className="absolute left-5 top-8 bottom-8 w-3 rounded-full bg-gradient-to-b from-white/25 to-transparent" />
+            <div className="absolute right-6 top-6 h-16 w-1.5 rounded-full bg-white/15" />
+          </div>
 
-        {/* candies */}
-        <div className="absolute inset-x-5 bottom-5 top-12">
-          {jarCandies.map((candy, index) => {
-            const isDay = index === dayCandyIndex;
-            return (
-              <motion.button
-                key={index}
-                type="button"
-                onClick={isDay ? openDaySweet : openRandomSweet}
-                aria-label={isDay ? "Open today's sweet" : "Open a sweet"}
-                className="absolute w-[22%] min-w-[44px] max-w-[60px] rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
-                style={{
-                  left: `${candy.x}%`,
-                  top: `${candy.y}%`,
-                  rotate: `${candy.rot}deg`,
-                  filter: isDay
-                    ? "drop-shadow(0 0 12px rgba(255,158,196,0.85))"
-                    : "drop-shadow(0 4px 8px rgba(0,0,0,0.3))",
-                }}
-                whileTap={reduceMotion ? undefined : { scale: 0.86 }}
-                animate={
-                  isDay && !reduceMotion && !sweetTaken
-                    ? { scale: [1, 1.08, 1] }
-                    : { scale: 1 }
-                }
-                transition={
-                  isDay && !sweetTaken
-                    ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
-                    : { duration: 0.2 }
-                }
-              >
-                <CandyIcon className="w-full" tone={candy.tone} />
-              </motion.button>
-            );
-          })}
-        </div>
+          {/* tap target for the shake — behind the candies */}
+          <button
+            type="button"
+            onClick={shakeJar}
+            aria-label="Shake the jar"
+            className="absolute inset-x-2 top-6 bottom-0 z-0 rounded-b-[2.5rem] rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/50"
+          />
+
+          {/* lid — also shakes the jar */}
+          <motion.button
+            type="button"
+            onClick={shakeJar}
+            aria-hidden
+            tabIndex={-1}
+            className="absolute inset-x-7 top-0 z-20 origin-bottom"
+            animate={lidTilt}
+            transition={{ type: "spring", stiffness: 320, damping: 22 }}
+          >
+            <div className="relative h-7 rounded-full border border-hairline-strong bg-surface-2 backdrop-blur-md">
+              <div className="absolute left-1/2 top-1/2 h-1.5 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink-faint/40" />
+            </div>
+          </motion.button>
+
+          {/* gift tag */}
+          <div className="pointer-events-none absolute right-1 top-9 z-20 -rotate-6">
+            <div className="rounded-md border border-hairline bg-canvas-raised/80 px-2 py-1 shadow-sm backdrop-blur-md">
+              <span className="font-display text-[11px] italic text-ink-muted">
+                {copy.hub.sweets.tag}
+              </span>
+            </div>
+          </div>
+
+          {/* candies (gaps fall through to the shake target behind) */}
+          <div className="pointer-events-none absolute inset-x-5 bottom-5 top-12 z-10">
+            {jarCandies.map((candy, index) => {
+              const isDay = index === DAY_CANDY_INDEX;
+              const isFlying = index === flyingIndex;
+              const wobble = (hashString(`c${index}`) % 7) - 3;
+
+              return (
+                <motion.button
+                  key={index}
+                  type="button"
+                  onClick={() => takeCandy(index)}
+                  aria-label={isDay ? "Take today's sweet" : "Take a sweet"}
+                  className="pointer-events-auto absolute w-[22%] min-w-[44px] max-w-[60px] rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+                  style={{
+                    left: `${candy.x}%`,
+                    top: `${candy.y}%`,
+                    filter: isDay
+                      ? "drop-shadow(0 0 12px rgba(255,158,196,0.85))"
+                      : "drop-shadow(0 4px 8px rgba(0,0,0,0.25))",
+                  }}
+                  initial={
+                    reduceMotion
+                      ? { opacity: 0, rotate: candy.rot }
+                      : { opacity: 0, y: -170 - index * 8, rotate: candy.rot - 40 }
+                  }
+                  animate={
+                    isFlying
+                      ? reduceMotion
+                        ? { opacity: 0 }
+                        : {
+                            opacity: [1, 1, 1, 0],
+                            y: -250,
+                            x: wobble * 4,
+                            scale: 1.4,
+                            rotate: candy.rot + 420,
+                          }
+                      : shaking && !reduceMotion
+                        ? {
+                            opacity: 1,
+                            y: [0, wobble * 2.2, 0],
+                            rotate: [candy.rot, candy.rot + wobble * 3, candy.rot],
+                            scale: 1,
+                          }
+                        : {
+                            opacity: 1,
+                            y: 0,
+                            x: 0,
+                            rotate: candy.rot,
+                            scale:
+                              flyingIndex !== null
+                                ? 0.94
+                                : isDay && !reduceMotion && !sweetTaken
+                                  ? [1, 1.08, 1]
+                                  : 1,
+                          }
+                  }
+                  transition={
+                    isFlying
+                      ? { duration: 0.5, ease: "easeOut" }
+                      : shaking
+                        ? { duration: 0.5, ease: "easeInOut" }
+                        : isDay && !sweetTaken && flyingIndex === null
+                          ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                          : {
+                              type: "spring",
+                              stiffness: 260,
+                              damping: 17,
+                              delay: reduceMotion ? 0 : index * 0.045,
+                            }
+                  }
+                  whileHover={
+                    reduceMotion || flyingIndex !== null
+                      ? undefined
+                      : { y: -4, scale: 1.06 }
+                  }
+                  whileTap={reduceMotion ? undefined : { scale: 0.84, y: -2 }}
+                >
+                  <CandyIcon className="w-full" tone={candy.tone} />
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
       </div>
 
-      <NoteOverlay
-        open={open !== null}
-        onClose={() => setOpen(null)}
-        label="A sweet"
-      >
+      <p className="mt-3 text-center text-xs text-ink-faint">
+        {copy.hub.sweets.shakeHint}
+      </p>
+
+      <NoteOverlay open={open !== null} onClose={closeOverlay} label="A sweet">
         {open && (
           <div className="rounded-3xl border border-hairline bg-canvas-raised/95 p-7 text-center shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)]">
             <motion.div
               className="mx-auto mb-5 w-20"
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, rotate: -30, scale: 0.6 }}
+              initial={
+                reduceMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, rotate: -30, scale: 0.6 }
+              }
               animate={{ opacity: 1, rotate: 0, scale: 1 }}
               transition={{ duration: 0.5, ease: EASE_SOFT }}
             >
@@ -129,14 +259,14 @@ export function SweetsTab() {
             <div className="mt-6 flex flex-col gap-2">
               <button
                 type="button"
-                onClick={openRandomSweet}
+                onClick={openAnother}
                 className="rounded-full border border-rose/40 bg-rose/15 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-rose/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
               >
                 {copy.hub.sweets.another}
               </button>
               <button
                 type="button"
-                onClick={() => setOpen(null)}
+                onClick={closeOverlay}
                 className="text-xs text-ink-faint transition-colors hover:text-ink-muted"
               >
                 {copy.hub.sweets.close}

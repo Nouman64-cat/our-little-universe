@@ -22,6 +22,8 @@ export interface OluState {
   gamePlays: number;
   /** Running total of hearts caught in the hub game. */
   gameHearts: number;
+  /** Indices (into `LETTERS`) of the love letters she has opened. */
+  readLetters: number[];
 }
 
 export const DEFAULT_STATE: OluState = {
@@ -34,6 +36,7 @@ export const DEFAULT_STATE: OluState = {
   hugsSent: 0,
   gamePlays: 0,
   gameHearts: 0,
+  readLetters: [],
 };
 
 const STORAGE_KEY = "olu:v1";
@@ -50,6 +53,9 @@ export function loadState(): OluState {
       gardenBlooms: Array.isArray(parsed.gardenBlooms) ? parsed.gardenBlooms : [],
       openedSweetDays: Array.isArray(parsed.openedSweetDays)
         ? parsed.openedSweetDays
+        : [],
+      readLetters: Array.isArray(parsed.readLetters)
+        ? parsed.readLetters.filter((n): n is number => typeof n === "number")
         : [],
     };
   } catch {
