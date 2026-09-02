@@ -24,6 +24,8 @@ export interface OluState {
   gameHearts: number;
   /** Indices (into `LETTERS`) of the love letters she has opened. */
   readLetters: number[];
+  /** Candy slots taken from the jar since it was last full — cleared on refill. */
+  takenSweets: number[];
 }
 
 export const DEFAULT_STATE: OluState = {
@@ -37,6 +39,7 @@ export const DEFAULT_STATE: OluState = {
   gamePlays: 0,
   gameHearts: 0,
   readLetters: [],
+  takenSweets: [],
 };
 
 const STORAGE_KEY = "olu:v1";
@@ -56,6 +59,9 @@ export function loadState(): OluState {
         : [],
       readLetters: Array.isArray(parsed.readLetters)
         ? parsed.readLetters.filter((n): n is number => typeof n === "number")
+        : [],
+      takenSweets: Array.isArray(parsed.takenSweets)
+        ? parsed.takenSweets.filter((n): n is number => typeof n === "number")
         : [],
     };
   } catch {

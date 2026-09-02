@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { copy } from "@/lib/config";
 import { EASE_SOFT } from "@/lib/motion";
 import { hashString } from "@/lib/daily";
-import { haptic } from "@/lib/utils";
+import { haptic, pickOne } from "@/lib/utils";
 import { CandyIcon } from "../ui/CandyIcon";
 import { useKeepsakes } from "./keepsake-context";
 import { NoteOverlay } from "./ui/NoteOverlay";
@@ -29,7 +29,7 @@ const CANDIES: { x: number; y: number; rot: number; tone: Tone }[] = [
   { x: 70, y: 10, rot: -16, tone: "pink" },
 ];
 
-/** The glowing candy is the sweet of the day. */
+/** The candy that carries today's sweet, when it's still in the jar. */
 const DAY_CANDY_INDEX = 4;
 
 interface OpenSweet {
@@ -37,16 +37,43 @@ interface OpenSweet {
   ofDay: boolean;
 }
 
-/** The sweet jar: one "sweet of the day", plus endless casual ones. */
+/** The sweet jar: one "sweet of the day", plus casual ones. Each candy you
+ *  open is eaten and leaves the jar; empty the jar and it quietly refills. */
 export function SweetsTab() {
   const reduceMotion = useReducedMotion();
-  const { sweetOfDay, sweetTaken, takeSweetOfDay, randomSweet } = useKeepsakes();
+  const {
+    sweetOfDay,
+    sweetTaken,
+    takeSweetOfDay,
+    randomSweet,
+    takenSweets,
+    takeSweet,
+    refillJar,
+  } = useKeepsakes();
+
   const [open, setOpen] = useState<OpenSweet | null>(null);
-  const [flyingIndex, setFlyingIndex] = useState<number | null>(null);
+  const [flying, setFlying] = useState<number | null>(null);
   const [shaking, setShaking] = useState(false);
+  const [refilled, setRefilled] = useState(false);
+  const refillTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const jarControls = useAnimationControls();
-  const jarCandies = useMemo(() => CANDIES, []);
+
+  useEffect(
+    () => () => {
+      if (refillTimer.current) clearTimeout(refillTimer.current);
+    },
+    [],
+  );
+
+  const present = CANDIES.map((_, i) => i).filter(
+    (i) => !takenSweets.includes(i),
+  );
+  const dayGlowIndex = sweetTaken
+    ? null
+    : present.includes(DAY_CANDY_INDEX)
+      ? DAY_CANDY_INDEX
+      : (present[0] ?? null);
 
   const revealSweet = (sweet: OpenSweet) => {
     if (reduceMotion) {
@@ -56,30 +83,49 @@ export function SweetsTab() {
     window.setTimeout(() => setOpen(sweet), 440);
   };
 
+  /** Once this take would clear the jar, schedule a fresh one. */
+  const scheduleRefillIfEmpty = (justTook: number) => {
+    const remaining = present.filter((i) => i !== justTook).length;
+    if (remaining > 0 || refillTimer.current) return;
+    refillTimer.current = setTimeout(() => {
+      refillTimer.current = null;
+      refillJar();
+      setRefilled(true);
+      setTimeout(() => setRefilled(false), 2800);
+    }, 950);
+  };
+
   const takeCandy = (index: number) => {
-    if (flyingIndex !== null || open) return;
-    const isDay = index === DAY_CANDY_INDEX;
+    if (flying !== null || open) return;
+    const isDay = index === dayGlowIndex;
     haptic(isDay ? 8 : 6);
-    setFlyingIndex(index);
+    setFlying(index);
+    takeSweet(index);
     if (isDay && !sweetTaken) takeSweetOfDay();
-    revealSweet({
-      text: isDay ? sweetOfDay : randomSweet(),
-      ofDay: isDay,
-    });
+    scheduleRefillIfEmpty(index);
+    revealSweet({ text: isDay ? sweetOfDay : randomSweet(), ofDay: isDay });
   };
 
   const openAnother = () => {
     haptic(6);
+    const pickable = present.filter(
+      (i) => !(i === dayGlowIndex && !sweetTaken),
+    );
+    if (pickable.length > 0) {
+      const pick = pickOne(pickable);
+      takeSweet(pick);
+      scheduleRefillIfEmpty(pick);
+    }
     setOpen({ text: randomSweet(), ofDay: false });
   };
 
   const closeOverlay = () => {
     setOpen(null);
-    setFlyingIndex(null);
+    setFlying(null);
   };
 
   const shakeJar = () => {
-    if (flyingIndex !== null) return;
+    if (flying !== null) return;
     haptic([6, 24]);
     if (!reduceMotion) {
       jarControls.start({
@@ -99,10 +145,16 @@ export function SweetsTab() {
         ? { rotate: -5, y: -3, x: 2 }
         : { rotate: 0, y: 0, x: 0 };
 
+  const topLine = refilled
+    ? copy.hub.sweets.refilled
+    : sweetTaken
+      ? copy.hub.sweets.taken
+      : copy.hub.sweets.glowing;
+
   return (
     <TabScreen title={copy.hub.sweets.title} subtitle={copy.hub.sweets.subtitle}>
       <p className="mb-4 text-sm text-ink-faint" suppressHydrationWarning>
-        {sweetTaken ? copy.hub.sweets.taken : copy.hub.sweets.glowing}
+        {topLine}
       </p>
 
       <div className="relative mx-auto aspect-[4/5] w-full max-w-[19rem]">
@@ -147,10 +199,10 @@ export function SweetsTab() {
 
           {/* candies (gaps fall through to the shake target behind) */}
           <div className="pointer-events-none absolute inset-x-5 bottom-5 top-12 z-10">
-            {jarCandies.map((candy, index) => {
-              const isDay = index === DAY_CANDY_INDEX;
-              const isFlying = index === flyingIndex;
-              const wobble = (hashString(`c${index}`) % 7) - 3;
+            {CANDIES.map((candy, index) => {
+              if (takenSweets.includes(index)) return null;
+
+              const isDay = index === dayGlowIndex;
 
               return (
                 <motion.button
@@ -172,52 +224,42 @@ export function SweetsTab() {
                       : { opacity: 0, y: -170 - index * 8, rotate: candy.rot - 40 }
                   }
                   animate={
-                    isFlying
-                      ? reduceMotion
-                        ? { opacity: 0 }
-                        : {
-                            opacity: [1, 1, 1, 0],
-                            y: -250,
-                            x: wobble * 4,
-                            scale: 1.4,
-                            rotate: candy.rot + 420,
-                          }
-                      : shaking && !reduceMotion
-                        ? {
-                            opacity: 1,
-                            y: [0, wobble * 2.2, 0],
-                            rotate: [candy.rot, candy.rot + wobble * 3, candy.rot],
-                            scale: 1,
-                          }
-                        : {
-                            opacity: 1,
-                            y: 0,
-                            x: 0,
-                            rotate: candy.rot,
-                            scale:
-                              flyingIndex !== null
-                                ? 0.94
-                                : isDay && !reduceMotion && !sweetTaken
-                                  ? [1, 1.08, 1]
-                                  : 1,
-                          }
+                    shaking && !reduceMotion
+                      ? {
+                          opacity: 1,
+                          y: [0, ((hashString(`c${index}`) % 7) - 3) * 2.2, 0],
+                          rotate: [
+                            candy.rot,
+                            candy.rot + ((hashString(`c${index}`) % 7) - 3) * 3,
+                            candy.rot,
+                          ],
+                        }
+                      : {
+                          opacity: 1,
+                          y: 0,
+                          rotate: candy.rot,
+                          scale:
+                            flying !== null
+                              ? 0.94
+                              : isDay && !reduceMotion && !sweetTaken
+                                ? [1, 1.08, 1]
+                                : 1,
+                        }
                   }
                   transition={
-                    isFlying
-                      ? { duration: 0.5, ease: "easeOut" }
-                      : shaking
-                        ? { duration: 0.5, ease: "easeInOut" }
-                        : isDay && !sweetTaken && flyingIndex === null
-                          ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
-                          : {
-                              type: "spring",
-                              stiffness: 260,
-                              damping: 17,
-                              delay: reduceMotion ? 0 : index * 0.045,
-                            }
+                    shaking
+                      ? { duration: 0.5, ease: "easeInOut" }
+                      : isDay && !sweetTaken && flying === null
+                        ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                        : {
+                            type: "spring",
+                            stiffness: 260,
+                            damping: 17,
+                            delay: reduceMotion ? 0 : index * 0.045,
+                          }
                   }
                   whileHover={
-                    reduceMotion || flyingIndex !== null
+                    reduceMotion || flying !== null
                       ? undefined
                       : { y: -4, scale: 1.06 }
                   }
@@ -227,6 +269,35 @@ export function SweetsTab() {
                 </motion.button>
               );
             })}
+
+            {/* the candy currently being eaten — flies up out of the jar */}
+            {flying !== null && (
+              <motion.span
+                key={`fly-${flying}`}
+                aria-hidden
+                className="absolute z-30 w-[22%] min-w-[44px] max-w-[60px]"
+                style={{
+                  left: `${CANDIES[flying].x}%`,
+                  top: `${CANDIES[flying].y}%`,
+                  filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
+                }}
+                initial={{ opacity: 1, y: 0, scale: 1, rotate: CANDIES[flying].rot }}
+                animate={
+                  reduceMotion
+                    ? { opacity: 0 }
+                    : {
+                        opacity: [1, 1, 0],
+                        y: -250,
+                        scale: 1.4,
+                        rotate: CANDIES[flying].rot + 420,
+                      }
+                }
+                transition={{ duration: reduceMotion ? 0.2 : 0.55, ease: "easeOut" }}
+                onAnimationComplete={() => setFlying(null)}
+              >
+                <CandyIcon className="w-full" tone={CANDIES[flying].tone} />
+              </motion.span>
+            )}
           </div>
         </motion.div>
       </div>

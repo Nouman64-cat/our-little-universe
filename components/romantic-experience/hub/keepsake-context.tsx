@@ -50,6 +50,12 @@ interface KeepsakeValue {
   sweetTaken: boolean;
   takeSweetOfDay: () => void;
   randomSweet: () => string;
+  /** Candy slots taken from the jar since it was last full. */
+  takenSweets: number[];
+  /** Mark a candy slot as eaten. */
+  takeSweet: (index: number) => void;
+  /** Put every candy back. */
+  refillJar: () => void;
 
   blooms: GardenLily[];
   streak: number;
@@ -114,6 +120,22 @@ export function KeepsakeProvider({
         : { ...current, openedSweetDays: [...current.openedSweetDays, today] },
     );
   }, [today]);
+
+  const takeSweet = useCallback((index: number) => {
+    setState((current) =>
+      current.takenSweets.includes(index)
+        ? current
+        : { ...current, takenSweets: [...current.takenSweets, index] },
+    );
+  }, []);
+
+  const refillJar = useCallback(() => {
+    setState((current) =>
+      current.takenSweets.length === 0
+        ? current
+        : { ...current, takenSweets: [] },
+    );
+  }, []);
 
   const plantLily = useCallback(() => {
     setState((current) => ({
@@ -199,6 +221,9 @@ export function KeepsakeProvider({
       sweetTaken: state.openedSweetDays.includes(today),
       takeSweetOfDay,
       randomSweet,
+      takenSweets: state.takenSweets,
+      takeSweet,
+      refillJar,
       blooms,
       streak: state.streak,
       plantLily,
@@ -230,6 +255,9 @@ export function KeepsakeProvider({
       state.gamePlays,
       state.gameHearts,
       state.readLetters,
+      state.takenSweets,
+      takeSweet,
+      refillJar,
       firstUnreadLetter,
       markLetterRead,
       momentOfVisit,

@@ -101,6 +101,7 @@ export const copy = {
       ofTheDay: "today's sweet",
       taken: "you've had today's — help yourself to more",
       glowing: "today's sweet is glowing",
+      refilled: "you finished the jar — here's a fresh one ♡",
       shakeHint: "tap the glass to shake it",
       tag: "for you",
       another: "have another",
