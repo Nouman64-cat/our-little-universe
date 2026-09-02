@@ -128,7 +128,7 @@ export function HeartGame({ onComplete }: HeartGameProps) {
   return (
     <div
       ref={playfieldRef}
-      className="relative h-[100dvh] w-full touch-none select-none overflow-hidden"
+      className="relative h-dvh w-full touch-none select-none overflow-hidden"
     >
       <GameHud endTime={endTime} score={score} onExpire={handleExpire} />
 

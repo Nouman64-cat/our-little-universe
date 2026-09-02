@@ -36,7 +36,7 @@ export function RomanticExperience() {
   }, []);
 
   return (
-    <main className="relative min-h-[100dvh] w-full overflow-hidden">
+    <main className="relative min-h-dvh w-full overflow-x-hidden">
       <AmbientBackground />
 
       {stage !== "landing" && (

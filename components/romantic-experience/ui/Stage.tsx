@@ -25,7 +25,7 @@ export function Stage({ children, bare = false }: StageProps) {
       animate="animate"
       exit="exit"
       className={[
-        "relative z-10 flex min-h-[100dvh] w-full flex-col items-center",
+        "relative z-10 flex min-h-dvh w-full flex-col items-center",
         bare
           ? "justify-start"
           : "justify-center gap-8 px-6 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-[calc(env(safe-area-inset-top)+5.5rem)]",
