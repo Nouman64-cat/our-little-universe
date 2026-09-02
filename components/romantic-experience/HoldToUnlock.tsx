@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { HOLD_DURATION_MS, copy } from "@/lib/config";
 import { EASE_SOFT } from "@/lib/motion";
 import { useHoldProgress } from "@/hooks/useHoldProgress";
+import { LilyBloom } from "./LilyBloom";
 import { HeartIcon } from "./ui/HeartIcon";
 
 interface HoldToUnlockProps {
@@ -132,20 +133,35 @@ export function HoldToUnlock({ onComplete }: HoldToUnlockProps) {
         >
           <motion.span
             className="block h-full w-full text-rose"
-            animate={
-              beatDuration > 0
-                ? { scale: isHolding || progress > 0 ? [1, 1.08, 1] : 1 }
-                : undefined
-            }
+            animate={{
+              opacity: bloomed ? 0.2 : 1,
+              scale:
+                beatDuration > 0 && (isHolding || progress > 0) && !bloomed
+                  ? [1, 1.08, 1]
+                  : 1,
+            }}
             transition={
-              beatDuration > 0
+              beatDuration > 0 && !bloomed
                 ? { duration: Math.max(beatDuration, 0.28), repeat: Infinity, ease: "easeInOut" }
-                : undefined
+                : { duration: 0.4 }
             }
           >
             <HeartIcon className="h-full w-full" />
           </motion.span>
         </motion.button>
+
+        {/* The lily opens over the heart once the hold completes. */}
+        {bloomed && (
+          <motion.div
+            className="pointer-events-none absolute flex items-center justify-center"
+            initial={{ opacity: 0, scale: 0.55 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: EASE_SOFT }}
+          >
+            <div className="absolute h-40 w-40 rounded-full bg-rose/30 blur-2xl" />
+            <LilyBloom className="relative h-52 w-52" />
+          </motion.div>
+        )}
       </motion.div>
 
       <motion.p

@@ -1,38 +1,32 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { copy } from "@/lib/config";
 import { EASE_SOFT, lineVariants } from "@/lib/motion";
+import { LilyBloom } from "./LilyBloom";
 import { GlowButton } from "./ui/GlowButton";
-import { HeartIcon } from "./ui/HeartIcon";
 
 interface FinalMessageProps {
   onRestart: () => void;
 }
 
 /**
- * The closing screen. The two lines arrive one at a time and are given room to
- * breathe; the "start again" button only fades in well afterwards.
+ * The closing screen. A lily opens above the message — the flower she loves —
+ * then the two lines arrive one at a time with room to breathe; the "start
+ * again" button only fades in well afterwards.
  */
 export function FinalMessage({ onRestart }: FinalMessageProps) {
-  const reduceMotion = useReducedMotion();
-
   return (
     <div className="flex max-w-sm flex-col items-center text-center">
       <motion.div
-        className="mb-12 h-12 w-12 text-rose"
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
+        className="relative mb-12 flex h-24 w-24 items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 1, ease: EASE_SOFT }}
-        style={{ filter: "drop-shadow(0 0 26px rgba(255,158,196,0.6))" }}
+        style={{ filter: "drop-shadow(0 0 26px rgba(255,158,196,0.45))" }}
       >
-        <motion.div
-          className="h-full w-full"
-          animate={reduceMotion ? undefined : { scale: [1, 1.07, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <HeartIcon className="h-full w-full" />
-        </motion.div>
+        <div className="absolute h-20 w-20 rounded-full bg-rose/25 blur-2xl" />
+        <LilyBloom className="relative h-24 w-24" />
       </motion.div>
 
       <motion.p

@@ -9,6 +9,13 @@ const BLOBS = [
   { className: "bottom-[-20%] left-[10%] h-[55vmin] w-[55vmin] bg-blush/15", drift: [0, 16, -18, 0], duration: 30 },
 ] as const;
 
+/** A few lily petals that drift down slowly — the flower she loves, kept faint. */
+const LILY_PETALS = [
+  { left: "14%", size: 26, delay: 0, duration: 26, drift: 44 },
+  { left: "68%", size: 20, delay: 9, duration: 32, drift: -34 },
+  { left: "44%", size: 30, delay: 17, duration: 29, drift: 26 },
+] as const;
+
 const PARTICLES = [
   { left: "12%", top: "22%", size: 3, delay: 0, duration: 11 },
   { left: "78%", top: "16%", size: 2, delay: 1.5, duration: 14 },
@@ -58,6 +65,30 @@ export function AmbientBackground() {
               ease: "easeInOut",
             }}
           />
+        ))}
+
+      {!reduceMotion &&
+        LILY_PETALS.map((petal, i) => (
+          <motion.span
+            key={`petal-${i}`}
+            className="absolute -top-12 block text-blush/10"
+            style={{ left: petal.left, width: petal.size, height: petal.size }}
+            initial={{ y: "-12vh", rotate: 0 }}
+            animate={{ y: "116vh", x: [0, petal.drift, 0], rotate: [0, 230] }}
+            transition={{
+              duration: petal.duration,
+              delay: petal.delay,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <svg viewBox="-12 -24 24 48" className="h-full w-full">
+              <path
+                d="M0,22 C 9,6 9,-14 0,-23 C -9,-14 -9,6 0,22 Z"
+                fill="currentColor"
+              />
+            </svg>
+          </motion.span>
         ))}
 
       {/* Gentle vignette to keep text legible against the lights. */}

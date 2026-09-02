@@ -5,6 +5,7 @@ import { copy } from "@/lib/config";
 import { EASE_SOFT } from "@/lib/motion";
 import { GlowButton } from "./ui/GlowButton";
 import { HeartIcon } from "./ui/HeartIcon";
+import { useWhispers } from "./whisper-context";
 
 interface LandingProps {
   onStart: () => void;
@@ -13,6 +14,7 @@ interface LandingProps {
 /** Opening screen: sets the tone and hands off into the first mini-game. */
 export function Landing({ onStart }: LandingProps) {
   const reduceMotion = useReducedMotion();
+  const { intro } = useWhispers();
 
   return (
     <div className="flex max-w-sm flex-col items-center text-center">
@@ -51,12 +53,15 @@ export function Landing({ onStart }: LandingProps) {
       </motion.h1>
 
       <motion.p
+        // The intro line is picked randomly per visit; server and client may
+        // differ, so let React keep the client's choice without warning.
+        suppressHydrationWarning
         className="mt-4 text-base leading-relaxed text-ink-muted"
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: EASE_SOFT, delay: 0.5 }}
       >
-        {copy.landing.subtitle}
+        {intro}
       </motion.p>
 
       <motion.div

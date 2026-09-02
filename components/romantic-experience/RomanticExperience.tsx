@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { STAGE_CHAPTER } from "@/lib/config";
+import type { WhisperPool } from "@/lib/whispers";
 import type { ExperienceStage } from "@/types/experience";
 import { AmbientBackground } from "./AmbientBackground";
 import { FinalMessage } from "./FinalMessage";
@@ -13,13 +14,23 @@ import { Landing } from "./Landing";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { ScratchReveal } from "./ScratchReveal";
 import { Stage } from "./ui/Stage";
+import { WhisperProvider, useWhispers } from "./whisper-context";
 
 /**
  * Orchestrates the whole journey: a single client component holding the current
  * stage and the mini-game score, swapping screens with a cinematic transition.
  * No routing, no reloads — just state.
  */
-export function RomanticExperience() {
+export function RomanticExperience({ whisperPool }: { whisperPool: WhisperPool }) {
+  return (
+    <WhisperProvider pool={whisperPool}>
+      <ExperienceFlow />
+    </WhisperProvider>
+  );
+}
+
+function ExperienceFlow() {
+  const { reshuffle } = useWhispers();
   const [stage, setStage] = useState<ExperienceStage>("landing");
   const [score, setScore] = useState(0);
 
@@ -33,7 +44,8 @@ export function RomanticExperience() {
   const restart = useCallback(() => {
     setScore(0);
     setStage("landing");
-  }, []);
+    reshuffle();
+  }, [reshuffle]);
 
   return (
     <main className="relative min-h-dvh w-full overflow-x-hidden">

@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
-import { GAME_DURATION_MS, HEART_SPAWN_INTERVAL_MS, copy } from "@/lib/config";
+import { GAME_DURATION_MS, HEART_SPAWN_INTERVAL_MS } from "@/lib/config";
 import { createId, haptic, pickOne, randomBetween } from "@/lib/utils";
+import { useWhispers } from "../whisper-context";
 import { FallingHeart } from "./FallingHeart";
 import { GameHud } from "./GameHud";
 import { ParticleBurst } from "./ParticleBurst";
+import { Whispers } from "./Whispers";
 import type { BurstData, FallingHeartData, HeartTone } from "./heart-game.types";
 
 interface HeartGameProps {
@@ -39,6 +41,7 @@ function createHeart(): FallingHeartData {
  */
 export function HeartGame({ onComplete }: HeartGameProps) {
   const reduceMotion = useReducedMotion();
+  const { gameHint, whispers } = useWhispers();
   const playfieldRef = useRef<HTMLDivElement>(null);
 
   const [endTime] = useState(() => Date.now() + GAME_DURATION_MS);
@@ -132,8 +135,10 @@ export function HeartGame({ onComplete }: HeartGameProps) {
     >
       <GameHud endTime={endTime} score={score} onExpire={handleExpire} />
 
+      <Whispers lines={whispers} />
+
       <p className="pointer-events-none absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+2rem)] text-center text-xs uppercase tracking-[0.3em] text-ink-faint">
-        {copy.game.hint}
+        {gameHint}
       </p>
 
       {playHeight > 0 &&

@@ -30,11 +30,8 @@ export const copy = {
   landing: {
     kicker: "for you",
     title: "I made you something.",
-    subtitle: "First, I need you to catch something…",
+    // The intro line under the title is AI-varied — see `lib/whispers.ts`.
     cta: "Start ♡",
-  },
-  game: {
-    hint: "Tap the hearts",
   },
   result: {
     score: (n: number) => `You collected ${n} ${n === 1 ? "heart" : "hearts"}.`,
