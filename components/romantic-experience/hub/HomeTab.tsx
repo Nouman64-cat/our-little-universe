@@ -1,11 +1,10 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { copy } from "@/lib/config";
 import { EASE_SOFT } from "@/lib/motion";
 import type { HubTab } from "@/types/experience";
-import { CandyIcon } from "../ui/CandyIcon";
-import { HeartIcon } from "../ui/HeartIcon";
+import { LilyBloom } from "../LilyBloom";
 import { LilyIcon } from "../ui/LilyIcon";
 import { useKeepsakes } from "./keepsake-context";
 import { TabScreen } from "./ui/TabScreen";
@@ -15,128 +14,173 @@ interface HomeTabProps {
   onReplayJourney: () => void;
 }
 
-function QuickCard({
-  onClick,
-  icon,
-  label,
-  hint,
-}: {
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-  hint: string;
-}) {
+/** A small envelope glyph for the letter card. */
+function Envelope() {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-left backdrop-blur-md transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
-    >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose/15">
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-medium text-ink">{label}</span>
-        <span className="block text-xs text-ink-faint">{hint}</span>
-      </span>
-    </button>
+    <svg viewBox="0 0 24 24" className="h-5 w-5 text-rose" aria-hidden>
+      <rect x="3" y="6" width="18" height="12.5" rx="2.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="m4 7.5 8 6 8-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
-/** The hub landing: a greeting, two things "for today", and the garden at a glance. */
+/**
+ * The hub's home: not a dashboard — an arrival. A flower opens in greeting, the
+ * message breathes, one letter waits, and the garden grows along the floor.
+ */
 export function HomeTab({ onNavigate, onReplayJourney }: HomeTabProps) {
-  const { nickname, timeGreeting, greetingLine, blooms, streak, sweetTaken } =
-    useKeepsakes();
+  const reduceMotion = useReducedMotion();
+  const {
+    nickname,
+    timeGreeting,
+    greetingLine,
+    daysKnown,
+    blooms,
+    streak,
+    sweetTaken,
+  } = useKeepsakes();
 
-  const recentBlooms = blooms.slice(-5);
+  const gardenLilies = blooms.slice(-7);
+
+  const fade = (delay: number) => ({
+    initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.7, ease: EASE_SOFT, delay },
+  });
 
   return (
     <TabScreen>
-      <div className="flex flex-1 flex-col">
-        <motion.p
-          className="text-xs uppercase tracking-[0.3em] text-ink-faint"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: EASE_SOFT }}
-        >
-          welcome back
-        </motion.p>
-
-        <motion.h1
-          className="mt-3 font-display text-3xl font-medium capitalize text-ink"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE_SOFT, delay: 0.1 }}
-        >
-          {timeGreeting}, {nickname}.
-        </motion.h1>
-
-        <motion.p
-          suppressHydrationWarning
-          className="mt-3 text-base leading-relaxed text-ink-muted"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE_SOFT, delay: 0.2 }}
-        >
-          {greetingLine}
-        </motion.p>
-
-        <motion.div
-          className="mt-8 grid gap-3"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE_SOFT, delay: 0.32 }}
-        >
-          <QuickCard
-            onClick={() => onNavigate("sweets")}
-            icon={<CandyIcon className="h-6 w-6" />}
-            label={copy.hub.sweets.ofTheDay}
-            hint={sweetTaken ? "opened — there's more in the jar" : "still wrapped"}
+      <div className="flex flex-1 flex-col items-center">
+        {/* ── greeting ── */}
+        <div className="relative flex flex-1 flex-col items-center justify-center pb-6 text-center">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/3 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose/15 blur-[70px]"
           />
-          <QuickCard
-            onClick={() => onNavigate("us")}
-            icon={<HeartIcon className="h-5 w-5 text-rose" />}
-            label={copy.hub.us.letterLabel}
-            hint="in the Us tab"
-          />
-        </motion.div>
 
+          <motion.div
+            className="relative mb-7 h-14 w-14"
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, ease: EASE_SOFT }}
+            style={{ filter: "drop-shadow(0 0 20px rgba(255,158,196,0.5))" }}
+          >
+            <LilyBloom className="h-full w-full" />
+          </motion.div>
+
+          <motion.p
+            {...fade(0.15)}
+            className="relative text-[11px] uppercase tracking-[0.42em] text-ink-faint"
+          >
+            {copy.hub.home.day(daysKnown)}
+          </motion.p>
+
+          <motion.h1
+            {...fade(0.26)}
+            className="relative mt-3 font-display text-[2rem] font-medium leading-tight text-ink"
+          >
+            {timeGreeting},
+            <br />
+            <span
+              className="text-rose-bright"
+              style={{ filter: "drop-shadow(0 0 14px rgba(255,184,214,0.35))" }}
+            >
+              {nickname}.
+            </span>
+          </motion.h1>
+
+          <motion.p
+            {...fade(0.42)}
+            suppressHydrationWarning
+            className="relative mt-4 max-w-[17rem] font-display text-base italic leading-relaxed text-ink-muted"
+          >
+            {greetingLine}
+          </motion.p>
+        </div>
+
+        {/* ── the letter waiting ── */}
         <motion.button
+          {...fade(0.56)}
           type="button"
-          onClick={() => onNavigate("garden")}
-          className="mt-4 flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-left backdrop-blur-md transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE_SOFT, delay: 0.42 }}
+          onClick={() => onNavigate("us")}
+          className="group flex w-full max-w-[20rem] items-center gap-4 rounded-[1.6rem] border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.02] px-5 py-4 text-left backdrop-blur-md transition-colors hover:from-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
         >
-          <span className="flex -space-x-1.5">
-            {recentBlooms.length > 0 ? (
-              recentBlooms.map((bloom) => (
-                <LilyIcon key={bloom.id} className="h-7 w-7" />
-              ))
-            ) : (
-              <LilyIcon className="h-7 w-7 opacity-40" />
-            )}
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose/15">
+            <Envelope />
           </span>
-          <span>
-            <span className="block text-sm font-medium text-ink">
-              {blooms.length} {blooms.length === 1 ? "lily" : "lilies"}
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[15px] text-ink">
+              {copy.hub.home.letterCard}
             </span>
-            <span className="block text-xs text-ink-faint">
-              {streak > 1 ? `${streak} days in a row` : "tap to visit"}
+            <span className="block text-xs italic text-ink-faint">
+              {copy.hub.home.letterHint}
             </span>
+          </span>
+          <span className="text-ink-faint transition-transform group-hover:translate-x-0.5">
+            →
           </span>
         </motion.button>
 
-        <div className="flex-1" />
+        <motion.button
+          {...fade(0.66)}
+          type="button"
+          onClick={() => onNavigate("sweets")}
+          className="mt-3 text-[13px] text-ink-faint transition-colors hover:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+          suppressHydrationWarning
+        >
+          {copy.hub.home.sweetLink(sweetTaken)}
+        </motion.button>
 
-        <button
+        {/* ── the garden, growing along the floor ── */}
+        <motion.button
+          {...fade(0.8)}
+          type="button"
+          onClick={() => onNavigate("garden")}
+          aria-label="Visit the garden"
+          className="mt-10 w-full max-w-[22rem] rounded-2xl px-2 pt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+        >
+          <div className="flex items-end justify-center gap-1">
+            {gardenLilies.length > 0 ? (
+              gardenLilies.map((bloom, index) => (
+                <span
+                  key={bloom.id}
+                  className="block"
+                  style={{
+                    width: 26,
+                    height: 26,
+                    marginBottom: index % 2 === 0 ? 4 : 0,
+                  }}
+                >
+                  <LilyIcon className="h-full w-full" />
+                </span>
+              ))
+            ) : (
+              <span className="block h-6 w-6 opacity-30">
+                <LilyIcon className="h-full w-full" />
+              </span>
+            )}
+          </div>
+          <div
+            className="mt-1 h-px w-full rounded-full"
+            style={{
+              background:
+                "linear-gradient(to right, transparent, var(--color-leaf), transparent)",
+              boxShadow: "0 2px 12px -2px rgba(143,184,156,0.5)",
+            }}
+          />
+          <p className="mt-2 text-center text-xs text-ink-faint" suppressHydrationWarning>
+            {copy.hub.home.gardenCaption(streak, blooms.length)}
+          </p>
+        </motion.button>
+
+        <motion.button
+          {...fade(0.95)}
           type="button"
           onClick={onReplayJourney}
-          className="mx-auto mt-10 text-sm text-ink-faint underline decoration-dotted underline-offset-4 transition-colors hover:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+          className="mt-6 text-xs text-ink-faint/70 underline decoration-dotted underline-offset-4 transition-colors hover:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
         >
           {copy.hub.home.replay}
-        </button>
+        </motion.button>
       </div>
     </TabScreen>
   );

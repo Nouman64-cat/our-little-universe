@@ -12,6 +12,7 @@ import {
 import { NICKNAME } from "@/lib/config";
 import type { SiteContent } from "@/lib/content";
 import {
+  daysBetween,
   formatMonthDay,
   greetingPrefix,
   hashString,
@@ -42,6 +43,8 @@ interface KeepsakeValue {
   timeGreeting: string;
   /** The softer second line under it. */
   greetingLine: string;
+  /** Which day this is, counting from her first visit (>= 1). */
+  daysKnown: number;
 
   sweetOfDay: string;
   sweetTaken: boolean;
@@ -159,6 +162,9 @@ export function KeepsakeProvider({
       nickname: NICKNAME,
       timeGreeting: greetingPrefix(),
       greetingLine: pickByKey(content.greetings, today),
+      daysKnown: state.firstVisit
+        ? Math.max(1, daysBetween(state.firstVisit, today) + 1)
+        : 1,
       sweetOfDay: pickByKey(content.sweets, today),
       sweetTaken: state.openedSweetDays.includes(today),
       takeSweetOfDay,
@@ -182,6 +188,7 @@ export function KeepsakeProvider({
     [
       content,
       today,
+      state.firstVisit,
       state.openedSweetDays,
       state.streak,
       state.hugsSent,

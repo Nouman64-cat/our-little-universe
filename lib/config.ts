@@ -73,6 +73,15 @@ export const copy = {
     },
     home: {
       replay: "revisit the journey",
+      day: (n: number) => (n === 1 ? "day one" : `day ${n}`),
+      letterCard: "a letter, for today",
+      letterHint: "unopened",
+      sweetLink: (taken: boolean) =>
+        taken ? "the jar is open — take another →" : "or unwrap today's sweet →",
+      gardenCaption: (streak: number, count: number) =>
+        streak > 1
+          ? `${streak} days of lilies`
+          : `${count} ${count === 1 ? "lily" : "lilies"}, and counting`,
     },
     game: {
       title: "Catch the hearts",
