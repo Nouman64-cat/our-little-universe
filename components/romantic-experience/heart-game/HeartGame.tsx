@@ -1,0 +1,162 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
+import { GAME_DURATION_MS, HEART_SPAWN_INTERVAL_MS, copy } from "@/lib/config";
+import { createId, haptic, pickOne, randomBetween } from "@/lib/utils";
+import { FallingHeart } from "./FallingHeart";
+import { GameHud } from "./GameHud";
+import { ParticleBurst } from "./ParticleBurst";
+import type { BurstData, FallingHeartData, HeartTone } from "./heart-game.types";
+
+interface HeartGameProps {
+  /** Receives the final tally once the 15 seconds are up. */
+  onComplete: (score: number) => void;
+}
+
+const TONES: HeartTone[] = ["rose", "lavender", "blush"];
+/** Hard cap on simultaneous hearts to keep the DOM small on slow phones. */
+const MAX_HEARTS = 16;
+
+function createHeart(): FallingHeartData {
+  const size = randomBetween(26, 46);
+  return {
+    id: createId(),
+    xPercent: randomBetween(8, 92),
+    drift: randomBetween(-64, 64),
+    size,
+    rotation: randomBetween(-150, 150),
+    // Bigger hearts drift down a little slower; all kept slow enough to tap.
+    duration: randomBetween(4, 6.2) - (size - 26) / 40,
+    tone: pickOne(TONES),
+  };
+}
+
+/**
+ * "Catch the Hearts" — a 15-second mini-game. Hearts spawn on a timer and fall
+ * with organic variation; tapping one pops it and scores a point. Never
+ * competitive: the result screen is warm regardless of the count.
+ */
+export function HeartGame({ onComplete }: HeartGameProps) {
+  const reduceMotion = useReducedMotion();
+  const playfieldRef = useRef<HTMLDivElement>(null);
+
+  const [endTime] = useState(() => Date.now() + GAME_DURATION_MS);
+  const [phase, setPhase] = useState<"playing" | "ending">("playing");
+  const [hearts, setHearts] = useState<FallingHeartData[]>(() =>
+    Array.from({ length: 3 }, createHeart),
+  );
+  const [bursts, setBursts] = useState<BurstData[]>([]);
+  const [score, setScore] = useState(0);
+  const [playHeight, setPlayHeight] = useState(0);
+
+  const scoreRef = useRef(0);
+  const expireTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Lock page scrolling for the duration of the game so taps never pan the page.
+  useEffect(() => {
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    const previousOverscroll = body.style.overscrollBehavior;
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    return () => {
+      body.style.overflow = previousOverflow;
+      body.style.overscrollBehavior = previousOverscroll;
+    };
+  }, []);
+
+  // Track playfield height so hearts fall exactly off the bottom edge.
+  useEffect(() => {
+    const measure = () => {
+      const rect = playfieldRef.current?.getBoundingClientRect();
+      if (rect) setPlayHeight(rect.height);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  // Spawn hearts while playing.
+  useEffect(() => {
+    if (phase !== "playing") return;
+    const interval = setInterval(() => {
+      setHearts((current) =>
+        current.length >= MAX_HEARTS ? current : [...current, createHeart()],
+      );
+    }, HEART_SPAWN_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  const handleExpire = useCallback(() => {
+    setPhase("ending");
+    // Let the last hearts drift a moment before the cinematic hand-off.
+    expireTimeoutRef.current = setTimeout(() => onComplete(scoreRef.current), 900);
+  }, [onComplete]);
+
+  useEffect(() => {
+    return () => {
+      if (expireTimeoutRef.current) clearTimeout(expireTimeoutRef.current);
+    };
+  }, []);
+
+  const handleCatch = useCallback(
+    (_id: string, clientX: number, clientY: number) => {
+      scoreRef.current += 1;
+      setScore(scoreRef.current);
+      haptic(9);
+
+      if (reduceMotion) return;
+      const rect = playfieldRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setBursts((current) => [
+        ...current,
+        { id: createId(), x: clientX - rect.left, y: clientY - rect.top },
+      ]);
+    },
+    [reduceMotion],
+  );
+
+  const handleRemoveHeart = useCallback((id: string) => {
+    setHearts((current) => current.filter((heart) => heart.id !== id));
+  }, []);
+
+  const handleRemoveBurst = useCallback((id: string) => {
+    setBursts((current) => current.filter((burst) => burst.id !== id));
+  }, []);
+
+  return (
+    <div
+      ref={playfieldRef}
+      className="relative h-[100dvh] w-full touch-none select-none overflow-hidden"
+    >
+      <GameHud endTime={endTime} score={score} onExpire={handleExpire} />
+
+      <p className="pointer-events-none absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+2rem)] text-center text-xs uppercase tracking-[0.3em] text-ink-faint">
+        {copy.game.hint}
+      </p>
+
+      {playHeight > 0 &&
+        hearts.map((heart) => (
+          <FallingHeart
+            key={heart.id}
+            heart={heart}
+            playHeight={playHeight}
+            onCatch={handleCatch}
+            onRemove={handleRemoveHeart}
+          />
+        ))}
+
+      <AnimatePresence>
+        {bursts.map((burst) => (
+          <ParticleBurst
+            key={burst.id}
+            x={burst.x}
+            y={burst.y}
+            onDone={() => handleRemoveBurst(burst.id)}
+          />
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}

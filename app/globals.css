@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Atmosphere */
+  --color-canvas: #0c0912;
+  --color-canvas-raised: #171021;
+
+  /* Ink */
+  --color-ink: #f5eef8;
+  --color-ink-muted: #b9a8cb;
+  --color-ink-faint: #877696;
+
+  /* Accents */
+  --color-rose: #ff9ec4;
+  --color-rose-bright: #ffb8d6;
+  --color-blush: #f7c9dd;
+  --color-lavender: #c1a6ff;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, "Iowan Old Style", Georgia,
+    serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  html,
+  body {
+    /* Stop the rubber-band scroll from exposing a white gutter on mobile. */
+    overscroll-behavior: none;
+    background-color: var(--color-canvas);
+  }
+
+  body {
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-rose) 35%, transparent);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Safety net for any CSS-driven animation; JS animation honors the same
+   preference through motion's useReducedMotion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
