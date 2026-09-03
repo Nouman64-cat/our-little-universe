@@ -15,11 +15,10 @@ import {
   daysBetween,
   formatMonthDay,
   greetingPrefix,
-  hashString,
   pickByKey,
   todayKey,
 } from "@/lib/daily";
-import { LETTERS, MOMENTS, type Letter, type Moment } from "@/lib/keepsakes";
+import { LETTERS, type Letter } from "@/lib/keepsakes";
 import {
   applyDailyVisit,
   loadState,
@@ -74,18 +73,16 @@ interface KeepsakeValue {
   randomResultReveal: () => string;
 
   letters: Letter[];
-  /** Which letter to surface first: the earliest unopened, or the day's pick. */
-  letterOfDayIndex: number;
-  /** Indices of the letters she has opened. */
-  readLetters: number[];
-  /** First letter index she hasn't opened yet, or `null` once all are read. */
-  firstUnreadLetter: number | null;
-  /** How many distinct letters she has opened. */
+  /** Total letters Cheeku has written. */
+  lettersTotal: number;
+  /** The next sealed letter in order, or `null` once every one is opened. */
+  nextLetterIndex: number | null;
+  /** True when a new letter can be opened today (one per day, none yet today). */
+  letterWaiting: boolean;
+  /** How many letters she has opened — they don't come back. */
   lettersReadCount: number;
-  markLetterRead: (index: number) => void;
-  moments: Moment[];
-  /** A moment to show on arrival, reshuffled each visit to this provider. */
-  momentOfVisit: number;
+  /** Open today's letter: consumes it and starts the one-per-day cooldown. */
+  openTodaysLetter: () => void;
 }
 
 const KeepsakeContext = createContext<KeepsakeValue | null>(null);
@@ -148,18 +145,25 @@ export function KeepsakeProvider({
     setState((current) => ({ ...current, hugsSent: current.hugsSent + 1 }));
   }, []);
 
-  const markLetterRead = useCallback((index: number) => {
-    setState((current) =>
-      current.readLetters.includes(index)
-        ? current
-        : { ...current, readLetters: [...current.readLetters, index] },
-    );
-  }, []);
-
-  // One moment to greet her with, chosen once per mount of the hub.
-  const [momentOfVisit] = useState(() =>
-    Math.floor(Math.random() * Math.max(1, MOMENTS.length)),
-  );
+  // One sealed letter can be opened per calendar day; opening it consumes it.
+  const openTodaysLetter = useCallback(() => {
+    setState((current) => {
+      if (current.lastLetterDate === today) return current;
+      let next = -1;
+      for (let i = 0; i < LETTERS.length; i += 1) {
+        if (!current.readLetters.includes(i)) {
+          next = i;
+          break;
+        }
+      }
+      if (next === -1) return current;
+      return {
+        ...current,
+        readLetters: [...current.readLetters, next],
+        lastLetterDate: today,
+      };
+    });
+  }, [today]);
 
   const randomSweet = useCallback(() => pickOne(content.sweets), [content.sweets]);
   const randomTeddyLine = useCallback(
@@ -202,12 +206,15 @@ export function KeepsakeProvider({
     [state.gardenBlooms, content.lilies],
   );
 
-  const firstUnreadLetter = useMemo(() => {
+  const nextLetterIndex = useMemo(() => {
     for (let i = 0; i < LETTERS.length; i += 1) {
       if (!state.readLetters.includes(i)) return i;
     }
     return null;
   }, [state.readLetters]);
+
+  const letterWaiting =
+    nextLetterIndex !== null && state.lastLetterDate !== today;
 
   const value = useMemo<KeepsakeValue>(
     () => ({
@@ -237,13 +244,11 @@ export function KeepsakeProvider({
       randomGameWhispers,
       randomResultReveal,
       letters: LETTERS,
-      letterOfDayIndex: hashString(today) % LETTERS.length,
-      readLetters: state.readLetters,
-      firstUnreadLetter,
+      lettersTotal: LETTERS.length,
+      nextLetterIndex,
+      letterWaiting,
       lettersReadCount: state.readLetters.length,
-      markLetterRead,
-      moments: MOMENTS,
-      momentOfVisit,
+      openTodaysLetter,
     }),
     [
       content,
@@ -258,9 +263,9 @@ export function KeepsakeProvider({
       state.takenSweets,
       takeSweet,
       refillJar,
-      firstUnreadLetter,
-      markLetterRead,
-      momentOfVisit,
+      nextLetterIndex,
+      letterWaiting,
+      openTodaysLetter,
       blooms,
       takeSweetOfDay,
       randomSweet,

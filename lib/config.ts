@@ -133,13 +133,21 @@ export const copy = {
       hugged: (n: number) => `${n} ${n === 1 ? "hug" : "hugs"} sent`,
     },
     us: {
-      title: "Us",
-      letterLabel: "a letter for today",
-      letterProgress: (read: number, total: number) =>
-        read >= total ? "every letter opened" : `${read} of ${total} opened`,
-      allRead: "you've opened them all. they stay here — reread any.",
-      momentsTitle: "our moments",
-      momentsHint: "tap a star",
+      title: "The letter box",
+      since: "every day since may 5",
+      progress: (read: number, total: number) => `${read} of ${total} read`,
+      /** How many sealed letters are still in the box. */
+      sealed: (n: number) =>
+        n === 1 ? "one letter still sealed" : `${n} letters still sealed`,
+      /** A new letter is available to open today. */
+      waiting: "a new letter came for you",
+      open: "open it",
+      /** Today's letter has already been opened. */
+      comeBack: "that's today's. the next one comes tomorrow ♡",
+      /** Every letter has been read — none come back. */
+      empty: "you've read every letter i had ready. i'll keep writing.",
+      /** Close button inside the open letter. */
+      close: "close",
     },
   },
 } as const;

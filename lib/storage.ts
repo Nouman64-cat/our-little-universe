@@ -22,8 +22,10 @@ export interface OluState {
   gamePlays: number;
   /** Running total of hearts caught in the hub game. */
   gameHearts: number;
-  /** Indices (into `LETTERS`) of the love letters she has opened. */
+  /** Indices (into `LETTERS`) of the love letters she has opened — gone for good. */
   readLetters: number[];
+  /** Date key of the day she last opened a letter, so only one arrives per day. */
+  lastLetterDate: string | null;
   /** Candy slots taken from the jar since it was last full — cleared on refill. */
   takenSweets: number[];
 }
@@ -39,6 +41,7 @@ export const DEFAULT_STATE: OluState = {
   gamePlays: 0,
   gameHearts: 0,
   readLetters: [],
+  lastLetterDate: null,
   takenSweets: [],
 };
 
@@ -60,6 +63,8 @@ export function loadState(): OluState {
       readLetters: Array.isArray(parsed.readLetters)
         ? parsed.readLetters.filter((n): n is number => typeof n === "number")
         : [],
+      lastLetterDate:
+        typeof parsed.lastLetterDate === "string" ? parsed.lastLetterDate : null,
       takenSweets: Array.isArray(parsed.takenSweets)
         ? parsed.takenSweets.filter((n): n is number => typeof n === "number")
         : [],

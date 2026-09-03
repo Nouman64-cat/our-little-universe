@@ -27,7 +27,7 @@ const c = copy.hub.house;
 export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
   const reduceMotion = useReducedMotion();
   const { house, resetHouse } = useHouse();
-  const { timeGreeting, nickname, greetingLine, firstUnreadLetter, blooms } =
+  const { timeGreeting, nickname, greetingLine, letterWaiting, blooms } =
     useKeepsakes();
 
   const [view, setView] = useState<"outside" | "inside">("outside");
@@ -76,7 +76,7 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
             <HouseExterior
               exterior={house.exterior}
               greeting={signLine}
-              hasUnreadLetter={firstUnreadLetter !== null}
+              hasUnreadLetter={letterWaiting}
               lilyCount={blooms.length}
               editing={editing}
               selected={selected}
