@@ -46,7 +46,7 @@ function Envelope({
       <rect x={-34} y={0} width={68} height={104} rx={4} fill={face} stroke={line} strokeWidth={1.3} />
       {/* flap */}
       <path d="M-34 3 L0 34 L34 3" fill="none" stroke={line} strokeWidth={1.3} strokeLinejoin="round" />
-      {seal ? (
+      {seal && (
         <g>
           <circle cx={0} cy={30} r={7} fill={SEAL} stroke="#b34c66" strokeWidth={1} />
           <path
@@ -54,8 +54,6 @@ function Envelope({
             fill="#ffe0e9"
           />
         </g>
-      ) : (
-        <circle cx={0} cy={24} r={2.4} fill={SEAL} opacity={0.75} />
       )}
     </g>
   );
@@ -92,14 +90,24 @@ export function LetterBox({ sealed, waiting, reduceMotion, onOpen }: LetterBoxPr
       {/* ground shadow */}
       <ellipse cx={160} cy={244} rx={116} ry={13} fill="#000" opacity={0.14} />
 
-      {/* open lid, hinged at the back-left of the box */}
-      <g transform="rotate(-19 44 150)">
-        <rect x={40} y={116} width={210} height={40} rx={8} fill={`url(#wood${gid})`} stroke={WOOD_EDGE} strokeWidth={1.6} />
-        <rect x={52} y={124} width={186} height={24} rx={5} fill="#f0e2c6" stroke="#d9c49b" strokeWidth={1.1} />
+      {/* the lid: tipped back behind a full box, or resting askew on an empty one */}
+      <g transform={empty ? "rotate(7 250 150)" : "rotate(-7 160 150)"}>
+        <rect
+          x={48}
+          y={empty ? 132 : 122}
+          width={224}
+          height={26}
+          rx={7}
+          fill={`url(#wood${gid})`}
+          stroke={WOOD_EDGE}
+          strokeWidth={1.6}
+        />
         <path
-          d="M145 146 c -5 -5 -9 -7 -9 -11.5 a 4.2 4.2 0 0 1 9 -1.7 a 4.2 4.2 0 0 1 9 1.7 c 0 4.5 -4 6.5 -9 11.5 Z"
-          fill={SEAL}
-          opacity={0.85}
+          d={`M56 ${empty ? 138 : 128} h208`}
+          stroke="#f2d9b6"
+          strokeOpacity={0.6}
+          strokeWidth={1.6}
+          strokeLinecap="round"
         />
       </g>
 
@@ -162,16 +170,16 @@ export function LetterBox({ sealed, waiting, reduceMotion, onOpen }: LetterBoxPr
           fontFamily="var(--font-display), Georgia, serif"
           fontStyle="italic"
         >
-          c ♡ c
+          C ♡ C
         </text>
       </g>
 
-      {/* a small kept heart resting in the open, empty box */}
+      {/* a single kept heart, just peeking over the rim of the emptied box */}
       {empty && (
         <path
-          d="M160 132 c -9 -9 -16 -13 -16 -21 a 7.5 7.5 0 0 1 16 -3 a 7.5 7.5 0 0 1 16 3 c 0 8 -7 12 -16 21 Z"
+          d="M160 158 c -11 -11 -19 -16 -19 -25 a 9 9 0 0 1 19 -3.6 a 9 9 0 0 1 19 3.6 c 0 9 -8 14 -19 25 Z"
           fill={SEAL}
-          opacity={0.4}
+          opacity={0.55}
         />
       )}
     </svg>

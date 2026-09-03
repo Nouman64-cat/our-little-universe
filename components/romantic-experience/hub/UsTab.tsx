@@ -49,7 +49,7 @@ export function UsTab() {
           type="button"
           onClick={handleOpen}
           disabled={!letterWaiting}
-          aria-label={letterWaiting ? c.open : c.title}
+          aria-label={c.title}
           className="w-full max-w-[22rem] rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/50 disabled:cursor-default"
         >
           <LetterBox
