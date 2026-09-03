@@ -228,6 +228,97 @@ export function Furniture({ variant }: { category?: string; variant: string }) {
         </g>
       );
 
+    // ── kitchen counters ───────────────────────────────────────────────────
+    case "counter-straight":
+      return (
+        <g stroke={darken("#e5dccb", 0.28)} strokeWidth={S} strokeLinejoin="round">
+          <rect x={6} y={70} width={88} height={26} rx={2} fill="#d9cdb6" />
+          <rect x={4} y={64} width={92} height={9} rx={2} fill="#eee6d6" />
+          <path d="M28 73 v23 M56 73 v23 M84 73 v23" stroke={darken("#d9cdb6", 0.22)} />
+          <circle cx={70} cy={84} r={4} fill="#bcd6e4" stroke="#9db9c6" />
+        </g>
+      );
+    case "counter-l":
+      return (
+        <g stroke={darken("#e5dccb", 0.28)} strokeWidth={S} strokeLinejoin="round">
+          <rect x={6} y={70} width={62} height={26} rx={2} fill="#d9cdb6" />
+          <rect x={66} y={40} width={24} height={56} rx={2} fill="#d9cdb6" />
+          <rect x={4} y={64} width={66} height={9} rx={2} fill="#eee6d6" />
+          <rect x={64} y={36} width={28} height={9} rx={2} fill="#eee6d6" />
+          <circle cx={40} cy={84} r={4} fill="#bcd6e4" stroke="#9db9c6" />
+        </g>
+      );
+    case "island":
+      return (
+        <g stroke={darken("#d9cdb6", 0.28)} strokeWidth={S} strokeLinejoin="round">
+          <rect x={18} y={62} width={64} height={30} rx={3} fill="#d9cdb6" />
+          <rect x={14} y={56} width={72} height={9} rx={3} fill="#eee6d6" />
+          <path d="M28 92 v6 M72 92 v6" stroke={WOOD_DARK} />
+          <ellipse cx={50} cy={73} rx={12} ry={4} fill="#bcd6e4" stroke="#9db9c6" />
+        </g>
+      );
+
+    // ── bath ───────────────────────────────────────────────────────────────
+    case "tub-clawfoot":
+      return (
+        <g stroke={darken("#eef3f4", 0.3)} strokeWidth={S} strokeLinejoin="round">
+          <path d="M12 66 q0 26 12 26 h52 q12 0 12 -26 v-4 q0 -6 -6 -6 h-64 q-6 0 -6 6 Z" fill="#f4f8f8" />
+          <path d="M12 62 q38 -10 76 0" fill="none" stroke="#cfe0e6" strokeWidth={S * 1.4} />
+          <path d="M22 92 l-4 8 M78 92 l4 8" stroke="#c9b98c" strokeWidth={S * 1.5} />
+          <path d="M20 60 v-8 a4 4 0 0 1 8 0" fill="none" stroke="#c9b98c" strokeWidth={S * 1.4} />
+        </g>
+      );
+    case "tub-modern":
+      return (
+        <g stroke={darken("#eef3f4", 0.3)} strokeWidth={S} strokeLinejoin="round">
+          <rect x={10} y={62} width={80} height={32} rx={8} fill="#f4f8f8" />
+          <rect x={16} y={58} width={68} height={8} rx={4} fill="#e6eeef" />
+          <ellipse cx={50} cy={76} rx={26} ry={7} fill="#dcebef" stroke="none" />
+          <path d="M84 58 v-10 a4 4 0 0 0 -8 0" fill="none" stroke="#b7c4c7" strokeWidth={S * 1.3} />
+        </g>
+      );
+    case "shower":
+      return (
+        <g stroke="#b7c4c7" strokeWidth={S} strokeLinejoin="round">
+          <rect x={22} y={22} width={56} height={74} rx={3} fill="rgba(210,230,235,0.5)" />
+          <path d="M50 22 v10 M42 34 h16" stroke="#9db0b3" strokeWidth={S * 1.3} />
+          <path d="M44 40 l-2 6 M52 42 l-2 6 M48 50 l-2 6" stroke="#bcd6e4" strokeWidth={S} />
+          <rect x={22} y={92} width={56} height={5} rx={2} fill="#dfe7e7" />
+        </g>
+      );
+
+    // ── vanity / sink ──────────────────────────────────────────────────────
+    case "sink-pedestal":
+      return (
+        <g stroke={darken("#eef3f4", 0.3)} strokeWidth={S} strokeLinejoin="round">
+          <path d="M30 62 h40 v8 q0 6 -10 6 h-20 q-10 0 -10 -6 Z" fill="#f4f8f8" />
+          <ellipse cx={50} cy={64} rx={16} ry={5} fill="#dcebef" stroke="none" />
+          <path d="M44 76 q-2 12 -8 20 h28 q-6 -8 -8 -20" fill="#eef3f4" />
+          <path d="M50 58 v-8 a4 4 0 0 1 8 0" fill="none" stroke="#c9b98c" strokeWidth={S * 1.3} />
+        </g>
+      );
+    case "vanity-cabinet":
+      return (
+        <g stroke={darken("#d9c3a8", 0.3)} strokeWidth={S} strokeLinejoin="round">
+          <rect x={16} y={62} width={68} height={34} rx={2} fill="#dcc7ac" />
+          <rect x={12} y={56} width={76} height={9} rx={2} fill="#f1ece0" />
+          <ellipse cx={50} cy={60} rx={16} ry={4} fill="#dcebef" stroke="none" />
+          <path d="M50 40 v-6 M50 40 h-16 M50 34 h-16" stroke="#b7c4c7" strokeWidth={S * 1.2} fill="none" />
+          <circle cx={38} cy={79} r={2} fill="#a2764a" stroke="none" />
+          <circle cx={62} cy={79} r={2} fill="#a2764a" stroke="none" />
+        </g>
+      );
+    case "vanity-double":
+      return (
+        <g stroke={darken("#d9c3a8", 0.3)} strokeWidth={S} strokeLinejoin="round">
+          <rect x={6} y={64} width={88} height={32} rx={2} fill="#dcc7ac" />
+          <rect x={2} y={58} width={96} height={9} rx={2} fill="#f1ece0" />
+          <ellipse cx={28} cy={62} rx={12} ry={3.5} fill="#dcebef" stroke="none" />
+          <ellipse cx={72} cy={62} rx={12} ry={3.5} fill="#dcebef" stroke="none" />
+          <path d="M50 64 v32" />
+        </g>
+      );
+
     default:
       return null;
   }

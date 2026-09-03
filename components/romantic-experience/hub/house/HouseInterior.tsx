@@ -1,209 +1,158 @@
 "use client";
 
-import { useId } from "react";
-import { ROOF_COLORS, ROOMS, WALL_PAINTS, type RoomDef } from "@/lib/house-catalog";
-import type { HouseState, RoomState } from "@/lib/house";
+import { WALL_PAINTS, roomDef, type RoomId } from "@/lib/house-catalog";
+import type { RoomState } from "@/lib/house";
 import { Furniture, FURNITURE_BOX } from "./parts/Furniture";
 import { FloorFill } from "./parts/FloorFill";
-import { darken } from "./parts/shade";
+import { darken, lighten } from "./parts/shade";
 import type { Selection } from "./selection";
 
 const paintHex = (id: string) =>
   (WALL_PAINTS.find((w) => w.id === id) ?? WALL_PAINTS[0]).hex;
-const roofHex = (id: string) =>
-  (ROOF_COLORS.find((c) => c.id === id) ?? ROOF_COLORS[0]).hex;
 
 interface HouseInteriorProps {
-  house: HouseState;
+  roomId: RoomId;
+  room: RoomState;
   editing: boolean;
   selected: Selection | null;
   onSelect: (s: Selection) => void;
 }
 
-// The rooms tile the whole house body edge-to-edge; the outline is a thin frame.
-const WALL = 2;
-const OUT = { x: 16, y: 78, w: 268, bottom: 470 };
-const AREA = {
-  x: OUT.x + WALL,
-  y: OUT.y + WALL,
-  w: OUT.w - WALL * 2,
-  h: OUT.bottom - OUT.y - WALL * 2,
-};
-const BAND_H = AREA.h / ROOMS.length;
+/* One room, seen face-on and filling the screen. */
+const VB = { w: 320, h: 640 };
+const CEIL = 14;
+const FLOOR_Y = 338;
 
-export function HouseInterior({ house, editing, selected, onSelect }: HouseInteriorProps) {
-  const roof = roofHex(house.exterior.roofColor);
+export function HouseInterior({ roomId, room, editing, selected, onSelect }: HouseInteriorProps) {
+  const def = roomDef(roomId);
+  const wall = paintHex(room.wall);
+  const wallShade = darken(wall, 0.08);
+  const wallLift = lighten(wall, 0.4);
+
+  const wallSel = editing && selected?.kind === "roomWall" && selected.room === roomId;
+  const floorSel = editing && selected?.kind === "roomFloor" && selected.room === roomId;
 
   return (
     <svg
-      viewBox="0 0 300 520"
-      preserveAspectRatio="xMidYMid meet"
+      viewBox={`0 0 ${VB.w} ${VB.h}`}
+      preserveAspectRatio="xMidYMax slice"
       className="h-full w-full"
       role="img"
-      aria-label="Inside your house"
+      aria-label={`Your ${def.label}`}
     >
-      <defs>
-        <linearGradient id="house-in-bg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#efe6da" />
-          <stop offset="100%" stopColor="#ddd0bd" />
-        </linearGradient>
-      </defs>
-      {/* the room the doll-house sits in */}
-      <rect x={-20} y={-20} width={340} height={560} fill="url(#house-in-bg)" />
-      <ellipse cx={150} cy={OUT.bottom + 14} rx={130} ry={12} fill="rgba(0,0,0,0.12)" />
+      {/* ceiling */}
+      <rect x={0} y={0} width={VB.w} height={CEIL} fill={darken(wall, 0.16)} />
+      {/* back wall */}
+      <rect x={0} y={CEIL} width={VB.w} height={FLOOR_Y - CEIL} fill={wall} />
+      <rect x={0} y={CEIL} width={VB.w} height={8} fill={wallShade} opacity={0.5} />
 
-      {/* roof cap — sits right on the wall top */}
-      <path
-        d={`M${OUT.x - 14} ${OUT.y + 2} L150 26 L${OUT.x + OUT.w + 14} ${OUT.y + 2} Z`}
-        fill={roof}
-        stroke={darken(roof, 0.3)}
-        strokeWidth={1.6}
-        strokeLinejoin="round"
-      />
+      {/* picture rail across the wall */}
+      <rect x={0} y={FLOOR_Y - 96} width={VB.w} height={3} fill={darken(wall, 0.14)} opacity={0.55} />
 
-      {/* house body — the rooms cover its fill; only the thin frame shows */}
-      <rect x={OUT.x} y={OUT.y} width={OUT.w} height={OUT.bottom - OUT.y} fill="#c3b7a1" />
+      {/* window on the wall — a fixed cosy detail */}
+      <g transform="translate(36 176)">
+        <rect x={-5} y={-5} width={64} height={84} rx={4} fill={wallLift} />
+        <rect x={0} y={0} width={54} height={74} rx={2} fill="#cfe2ea" stroke={darken(wall, 0.25)} strokeWidth={2.5} />
+        <path d="M0 0 h54 v74 h-54 Z M27 0 v74 M0 37 h54" fill="none" stroke={darken(wall, 0.2)} strokeWidth={2} />
+        <path d="M7 9 l11 11" stroke="#eef5f8" strokeWidth={3} />
+        <circle cx={43} cy={13} r={4.5} fill="#fff3d6" />
+      </g>
 
-      {ROOMS.map((def, i) => {
-        const box = { x: AREA.x, y: AREA.y + i * BAND_H, w: AREA.w, h: BAND_H };
+      {/* a little wall clock (the bath has its mirror on the right instead) */}
+      {roomId !== "bathroom" && (
+        <g transform="translate(278 272)">
+          <circle cx={0} cy={0} r={15} fill={wallLift} stroke={darken(wall, 0.28)} strokeWidth={2} />
+          <path d="M0 0 v-8 M0 0 l6 3" stroke={darken(wall, 0.4)} strokeWidth={1.6} strokeLinecap="round" />
+          <circle cx={0} cy={0} r={1.4} fill={darken(wall, 0.4)} />
+        </g>
+      )}
+
+      {/* floor */}
+      <FloorFill floor={room.floor} x={0} y={FLOOR_Y} w={VB.w} h={VB.h - FLOOR_Y} />
+      {/* wall / floor junction */}
+      <rect x={0} y={FLOOR_Y - 4} width={VB.w} height={5} fill={darken(wall, 0.2)} opacity={0.6} />
+
+      {/* furniture */}
+      {def.slots.map((slot) => {
+        const item = room.slots[slot.id];
+        if (!item) return null;
+        const scale = ((VB.w * slot.w) / 100) / FURNITURE_BOX;
+        const cx = (VB.w * slot.x) / 100;
+        const isWall = slot.category === "wall";
+        const anchorY = CEIL + ((VB.h - CEIL) * slot.y) / 100;
+        const tx = cx - (FURNITURE_BOX * scale) / 2;
+        const ty = isWall
+          ? anchorY - (FURNITURE_BOX * scale) / 2
+          : anchorY - FURNITURE_BOX * scale;
         return (
-          <Room
-            key={def.id}
-            def={def}
-            state={house.rooms[def.id]}
-            box={box}
-            editing={editing}
-            selected={selected}
-            onSelect={onSelect}
-          />
+          <g key={slot.id}>
+            {/* soft contact shadow for floor pieces */}
+            {!isWall && (
+              <ellipse
+                cx={cx}
+                cy={anchorY - 2}
+                rx={(FURNITURE_BOX * scale) / 2.6}
+                ry={5}
+                fill="rgba(0,0,0,0.07)"
+              />
+            )}
+            <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
+              <Furniture category={slot.category} variant={item} />
+            </g>
+          </g>
         );
       })}
 
-      {/* band dividers + outer frame, over the rooms */}
-      {ROOMS.slice(1).map((_, i) => (
-        <line
-          key={i}
-          x1={AREA.x}
-          y1={AREA.y + (i + 1) * BAND_H}
-          x2={AREA.x + AREA.w}
-          y2={AREA.y + (i + 1) * BAND_H}
-          stroke="#c3b7a1"
-          strokeWidth={3}
-        />
-      ))}
-      <rect
-        x={OUT.x}
-        y={OUT.y}
-        width={OUT.w}
-        height={OUT.bottom - OUT.y}
-        fill="none"
-        stroke="#a89a82"
-        strokeWidth={WALL * 2}
-      />
-    </svg>
-  );
-}
-
-function Room({
-  def,
-  state,
-  box,
-  editing,
-  selected,
-  onSelect,
-}: {
-  def: RoomDef;
-  state: RoomState;
-  box: { x: number; y: number; w: number; h: number };
-  editing: boolean;
-  selected: Selection | null;
-  onSelect: (s: Selection) => void;
-}) {
-  const clip = useId().replace(/:/g, "");
-  const wall = paintHex(state.wall);
-  const floorH = box.h * 0.24;
-  const floorY = box.y + box.h - floorH;
-
-  const wallSel = editing && selected?.kind === "roomWall" && selected.room === def.id;
-  const floorSel = editing && selected?.kind === "roomFloor" && selected.room === def.id;
-
-  return (
-    <g>
-      <clipPath id={clip}>
-        <rect x={box.x} y={box.y} width={box.w} height={box.h} />
-      </clipPath>
-      <g clipPath={`url(#${clip})`}>
-        <rect x={box.x} y={box.y} width={box.w} height={box.h} fill={wall} />
-        <FloorFill floor={state.floor} x={box.x} y={floorY} w={box.w} h={floorH} />
-
-        {def.slots.map((slot) => {
-          const item = state.slots[slot.id];
-          if (!item) return null;
-          const scale = ((box.w * slot.w) / 100) / FURNITURE_BOX;
-          const cx = box.x + (box.w * slot.x) / 100;
-          const isWall = slot.category === "wall";
-          const anchorY = box.y + (box.h * slot.y) / 100;
-          const tx = cx - (FURNITURE_BOX * scale) / 2;
-          const ty = isWall
-            ? anchorY - (FURNITURE_BOX * scale) / 2
-            : anchorY - FURNITURE_BOX * scale;
-          return (
-            <g key={slot.id} transform={`translate(${tx} ${ty}) scale(${scale})`}>
-              <Furniture category={slot.category} variant={item} />
-            </g>
-          );
-        })}
-      </g>
-
-      {/* edit layer — above the furniture so hotspots are always tappable */}
+      {/* edit layer — above the furniture so hotspots stay tappable */}
       {editing && (
         <>
           <EditRect
-            x={box.x}
-            y={box.y}
-            w={box.w}
-            h={box.h - floorH}
+            x={0}
+            y={CEIL}
+            w={VB.w}
+            h={FLOOR_Y - CEIL}
             active={wallSel}
             label={`${def.label} wall`}
-            onSelect={() => onSelect({ kind: "roomWall", room: def.id })}
+            onSelect={() => onSelect({ kind: "roomWall", room: roomId })}
           />
           <EditRect
-            x={box.x}
-            y={floorY}
-            w={box.w}
-            h={floorH}
+            x={0}
+            y={FLOOR_Y}
+            w={VB.w}
+            h={VB.h - FLOOR_Y}
             active={floorSel}
             label={`${def.label} floor`}
-            onSelect={() => onSelect({ kind: "roomFloor", room: def.id })}
+            onSelect={() => onSelect({ kind: "roomFloor", room: roomId })}
           />
           {def.slots.map((slot) => {
-            const cx = box.x + (box.w * slot.x) / 100;
+            const cx = (VB.w * slot.x) / 100;
             const isWall = slot.category === "wall";
-            const anchorY = box.y + (box.h * slot.y) / 100;
-            const hw = Math.max(20, (box.w * slot.w) / 100 * 0.7);
+            const anchorY = CEIL + ((VB.h - CEIL) * slot.y) / 100;
+            const hw = Math.max(40, (VB.w * slot.w) / 100 * 0.8);
+            const hh = isWall ? 56 : 62;
             return (
               <SlotHotspot
                 key={slot.id}
                 x={cx - hw / 2}
-                y={anchorY - (isWall ? 18 : 34)}
+                y={isWall ? anchorY - hh / 2 : anchorY - hh}
                 w={hw}
-                h={isWall ? 34 : 36}
+                h={hh}
                 active={
                   selected?.kind === "slot" &&
-                  selected.room === def.id &&
+                  selected.room === roomId &&
                   selected.slotId === slot.id
                 }
-                empty={!state.slots[slot.id]}
+                empty={!room.slots[slot.id]}
                 label={`${def.label} · ${slot.id}`}
                 onSelect={() =>
-                  onSelect({ kind: "slot", room: def.id, slotId: slot.id, category: slot.category })
+                  onSelect({ kind: "slot", room: roomId, slotId: slot.id, category: slot.category })
                 }
               />
             );
           })}
         </>
       )}
-    </g>
+    </svg>
   );
 }
 
@@ -232,8 +181,8 @@ function EditRect({
       height={h}
       fill={active ? "rgba(255,158,196,0.14)" : "transparent"}
       stroke={active ? "#ff9ec4" : "rgba(255,158,196,0.4)"}
-      strokeWidth={active ? 2 : 1}
-      strokeDasharray={active ? undefined : "3 3"}
+      strokeWidth={active ? 2.5 : 1.5}
+      strokeDasharray={active ? undefined : "4 4"}
       style={{ cursor: "pointer" }}
       role="button"
       tabIndex={0}
@@ -271,14 +220,14 @@ function SlotHotspot({
         y={y}
         width={w}
         height={h}
-        rx={4}
-        fill={active ? "rgba(255,158,196,0.2)" : empty ? "rgba(255,158,196,0.08)" : "transparent"}
+        rx={6}
+        fill={active ? "rgba(255,158,196,0.22)" : empty ? "rgba(255,158,196,0.1)" : "transparent"}
         stroke={active ? "#ff9ec4" : "rgba(255,158,196,0.6)"}
-        strokeWidth={active ? 2 : 1.1}
-        strokeDasharray={active ? undefined : "3 2"}
+        strokeWidth={active ? 2.5 : 1.4}
+        strokeDasharray={active ? undefined : "4 3"}
       />
       {empty && !active && (
-        <text x={x + w / 2} y={y + h / 2 + 4} textAnchor="middle" fontSize={13} fill="#ff9ec4">
+        <text x={x + w / 2} y={y + h / 2 + 6} textAnchor="middle" fontSize={18} fill="#ff9ec4">
           +
         </text>
       )}

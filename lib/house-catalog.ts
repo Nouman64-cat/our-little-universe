@@ -98,9 +98,18 @@ export const YARD_SLOTS = 2;
 
 // ── Interior ────────────────────────────────────────────────────────────────
 
-export type RoomId = "living" | "bedroom" | "kitchen";
+export type RoomId = "living" | "bedroom" | "kitchen" | "bathroom";
 
-export type SlotCategory = "seat" | "bed" | "rug" | "table" | "wall" | "accent";
+export type SlotCategory =
+  | "seat"
+  | "bed"
+  | "rug"
+  | "table"
+  | "counter"
+  | "bath"
+  | "vanity"
+  | "wall"
+  | "accent";
 
 export interface Slot {
   id: string;
@@ -118,35 +127,49 @@ export interface RoomDef {
   slots: readonly Slot[];
 }
 
+/**
+ * Slot `x`/`y` are percentages of the single-room view (`y` = the piece's
+ * baseline from the top of the room); `w` is a rough width as a % of the room.
+ */
 export const ROOMS: readonly RoomDef[] = [
   {
     id: "living",
-    label: "living room",
+    label: "lounge",
     slots: [
-      { id: "sofa", category: "seat", x: 32, y: 88, w: 34 },
-      { id: "rug", category: "rug", x: 48, y: 95, w: 40 },
-      { id: "table", category: "table", x: 70, y: 88, w: 18 },
-      { id: "art", category: "wall", x: 34, y: 32, w: 20 },
+      { id: "rug", category: "rug", x: 50, y: 82, w: 74 },
+      { id: "sofa", category: "seat", x: 42, y: 71, w: 56 },
+      { id: "table", category: "table", x: 58, y: 80, w: 24 },
+      { id: "art", category: "wall", x: 50, y: 41, w: 30 },
     ],
   },
   {
     id: "bedroom",
     label: "bedroom",
     slots: [
-      { id: "bed", category: "bed", x: 37, y: 88, w: 40 },
-      { id: "rug", category: "rug", x: 68, y: 95, w: 30 },
-      { id: "lamp", category: "accent", x: 86, y: 88, w: 11 },
-      { id: "art", category: "wall", x: 42, y: 30, w: 18 },
+      { id: "rug", category: "rug", x: 50, y: 84, w: 58 },
+      { id: "bed", category: "bed", x: 47, y: 72, w: 62 },
+      { id: "lamp", category: "accent", x: 90, y: 70, w: 16 },
+      { id: "art", category: "wall", x: 50, y: 41, w: 26 },
     ],
   },
   {
     id: "kitchen",
     label: "kitchen",
     slots: [
-      { id: "counter", category: "table", x: 30, y: 88, w: 34 },
-      { id: "table", category: "table", x: 74, y: 92, w: 20 },
-      { id: "stool", category: "accent", x: 74, y: 90, w: 10 },
-      { id: "shelf", category: "wall", x: 32, y: 30, w: 22 },
+      { id: "counter", category: "counter", x: 36, y: 72, w: 58 },
+      { id: "table", category: "table", x: 81, y: 80, w: 28 },
+      { id: "stool", category: "accent", x: 81, y: 76, w: 14 },
+      { id: "shelf", category: "wall", x: 52, y: 41, w: 30 },
+    ],
+  },
+  {
+    id: "bathroom",
+    label: "bath",
+    slots: [
+      { id: "tub", category: "bath", x: 42, y: 72, w: 58 },
+      { id: "sink", category: "vanity", x: 82, y: 74, w: 28 },
+      { id: "mirror", category: "wall", x: 82, y: 41, w: 18 },
+      { id: "plant", category: "accent", x: 15, y: 82, w: 16 },
     ],
   },
 ];
@@ -195,6 +218,21 @@ export const FURNITURE: Record<SlotCategory, readonly StyleOption[]> = {
     { id: "table-rect", label: "long table" },
     { id: "table-nest", label: "nesting tables" },
     { id: "table-trunk", label: "trunk table" },
+  ],
+  counter: [
+    { id: "counter-straight", label: "straight counter" },
+    { id: "counter-l", label: "L counter" },
+    { id: "island", label: "kitchen island" },
+  ],
+  bath: [
+    { id: "tub-clawfoot", label: "clawfoot tub" },
+    { id: "tub-modern", label: "modern tub" },
+    { id: "shower", label: "shower" },
+  ],
+  vanity: [
+    { id: "sink-pedestal", label: "pedestal sink" },
+    { id: "vanity-cabinet", label: "vanity cabinet" },
+    { id: "vanity-double", label: "double vanity" },
   ],
   wall: [
     { id: "art-single", label: "one painting" },

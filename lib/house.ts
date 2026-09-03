@@ -58,13 +58,15 @@ const DEFAULT_EXTERIOR: ExteriorState = {
 const DEFAULT_ROOM_SLOTS: Record<RoomId, Record<string, string | null>> = {
   living: { sofa: "sofa-curved", rug: "rug-round", table: "table-round", art: "art-trio" },
   bedroom: { bed: "bed-simple", rug: "rug-rect", lamp: "floor-lamp", art: "art-single" },
-  kitchen: { counter: "table-rect", table: "table-round", stool: "stool", shelf: "shelf" },
+  kitchen: { counter: "counter-straight", table: "table-round", stool: "stool", shelf: "shelf" },
+  bathroom: { tub: "tub-clawfoot", sink: "sink-pedestal", mirror: "mirror", plant: "plant" },
 };
 
 const DEFAULT_ROOM_SURFACES: Record<RoomId, { wall: string; floor: string }> = {
   living: { wall: "warmwhite", floor: "oak" },
   bedroom: { wall: "blush", floor: "carpet" },
   kitchen: { wall: "sage", floor: "checker" },
+  bathroom: { wall: "sky", floor: "tile" },
 };
 
 /** A fresh, fully-populated default house (never shares nested references). */

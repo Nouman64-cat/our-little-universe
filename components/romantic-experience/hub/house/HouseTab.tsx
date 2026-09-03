@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { NAMES, PLANT_DURATION_MS, copy } from "@/lib/config";
+import { ROOMS, type RoomId } from "@/lib/house-catalog";
 import { EASE_SOFT } from "@/lib/motion";
 import { useHoldProgress } from "@/hooks/useHoldProgress";
 import { haptic } from "@/lib/utils";
@@ -30,6 +31,7 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
     useKeepsakes();
 
   const [view, setView] = useState<"outside" | "inside">("outside");
+  const [roomId, setRoomId] = useState<RoomId>(ROOMS[0].id);
   const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState<Selection | null>(null);
 
@@ -51,6 +53,12 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
     setSelected(null);
   }, []);
 
+  const selectRoom = useCallback((next: RoomId) => {
+    haptic(4);
+    setRoomId(next);
+    setSelected(null);
+  }, []);
+
   const signLine = `${NAMES.her} & ${NAMES.him}`;
 
   return (
@@ -58,11 +66,11 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
       <div className="relative min-h-dvh w-full overflow-hidden bg-canvas">
         {/* the house fills the whole screen */}
         <motion.div
-          key={view}
+          key={view === "inside" ? `room-${roomId}` : "outside"}
           className="absolute inset-0"
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.02 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: EASE_SOFT }}
+          transition={{ duration: 0.35, ease: EASE_SOFT }}
         >
           {view === "outside" ? (
             <HouseExterior
@@ -78,13 +86,38 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
             />
           ) : (
             <HouseInterior
-              house={house}
+              roomId={roomId}
+              room={house.rooms[roomId]}
               editing={editing}
               selected={selected}
               onSelect={setSelected}
             />
           )}
         </motion.div>
+
+        {/* room picker — only inside */}
+        {view === "inside" && (
+          <motion.div
+            {...fade(0.22)}
+            className="absolute inset-x-0 top-[calc(env(safe-area-inset-top)+6.75rem)] flex justify-center px-4"
+          >
+            <div className="flex gap-0.5 rounded-full border border-white/25 bg-black/40 p-1 backdrop-blur-md">
+              {ROOMS.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => selectRoom(r.id)}
+                  aria-pressed={roomId === r.id}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 ${
+                    roomId === r.id ? "bg-rose/35 text-white" : "text-white/75 hover:text-white"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* soft scrim so the floated chrome stays legible over any sky */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/35 via-black/12 to-transparent" />
