@@ -36,6 +36,7 @@ export function GameTab() {
 
   const [phase, setPhase] = useState<Phase>("intro");
   const [score, setScore] = useState(0);
+  const [bestCombo, setBestCombo] = useState(0);
   const [round, setRound] = useState(() => ({
     hint: randomGameHint(),
     whispers: randomGameWhispers(),
@@ -54,8 +55,9 @@ export function GameTab() {
   }, [randomGameHint, randomGameWhispers, randomResultReveal]);
 
   const handleComplete = useCallback(
-    (finalScore: number) => {
+    (finalScore: number, runBestCombo: number) => {
       setScore(finalScore);
+      setBestCombo(runBestCombo);
       recordGame(finalScore);
       setPhase("result");
     },
@@ -129,6 +131,7 @@ export function GameTab() {
             score={score}
             reveal={round.reveal}
             ctaLabel={copy.hub.game.again}
+            bestCombo={bestCombo}
             onContinue={startGame}
             footer={copy.hub.game.stats(gamePlays, gameHearts)}
           />

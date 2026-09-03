@@ -100,7 +100,7 @@ export const copy = {
     },
     game: {
       title: "Catch the hearts",
-      subtitle: "five misses and it's over. no pressure.",
+      subtitle: "keep a streak for ×2, ×3. five misses ends it.",
       start: "Play ♡",
       again: "Play again",
       done: "done",

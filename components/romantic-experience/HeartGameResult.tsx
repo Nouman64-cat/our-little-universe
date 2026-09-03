@@ -13,6 +13,8 @@ interface HeartGameResultProps {
   reveal: string;
   onContinue: () => void;
   ctaLabel?: string;
+  /** Longest unbroken catch streak this run — celebrated if it was a good one. */
+  bestCombo?: number;
   /** Optional line under the button, e.g. lifetime stats in the hub. */
   footer?: ReactNode;
 }
@@ -27,6 +29,7 @@ export function HeartGameResult({
   reveal,
   onContinue,
   ctaLabel = copy.result.cta,
+  bestCombo = 0,
   footer,
 }: HeartGameResultProps) {
   const reduceMotion = useReducedMotion();
@@ -57,6 +60,17 @@ export function HeartGameResult({
       >
         {copy.result.score(score)}
       </motion.p>
+
+      {bestCombo >= 4 && (
+        <motion.p
+          className="mt-2 text-xs uppercase tracking-[0.25em] text-honey"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, ease: EASE_SOFT, delay: 0.7 }}
+        >
+          {bestCombo} in a row ♡
+        </motion.p>
+      )}
 
       <motion.p
         suppressHydrationWarning

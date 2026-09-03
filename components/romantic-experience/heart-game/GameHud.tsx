@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { GAME_MAX_MISSES } from "@/lib/config";
 import { HeartIcon } from "../ui/HeartIcon";
 
@@ -9,6 +9,8 @@ interface GameHudProps {
   /** Hearts missed so far (0 – GAME_MAX_MISSES). */
   misses: number;
   score: number;
+  /** Current streak multiplier (1 = none). */
+  multiplier: number;
   /** Sit near the top edge (hub) instead of below the journey progress bar. */
   embedded?: boolean;
 }
@@ -66,7 +68,8 @@ function Lives({ misses }: { misses: number }) {
   );
 }
 
-function GameHudComponent({ misses, score, embedded = false }: GameHudProps) {
+function GameHudComponent({ misses, score, multiplier, embedded = false }: GameHudProps) {
+  const hot = multiplier >= 3;
   return (
     <div
       className={[
@@ -76,16 +79,34 @@ function GameHudComponent({ misses, score, embedded = false }: GameHudProps) {
       aria-live="polite"
     >
       <Lives misses={misses} />
-      <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 backdrop-blur-md">
+      <div className="flex items-center gap-1.5 rounded-full border border-hairline bg-surface py-1.5 pl-2 pr-3 backdrop-blur-md">
+        <AnimatePresence mode="popLayout" initial={false}>
+          {multiplier > 1 && (
+            <motion.span
+              key={multiplier}
+              className="rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums"
+              style={{
+                color: hot ? "#7a4a00" : "#8a2f52",
+                background: hot ? "rgba(255,206,120,0.9)" : "rgba(255,158,196,0.85)",
+              }}
+              initial={{ scale: 0.4, opacity: 0 }}
+              animate={{ scale: [1.4, 1], opacity: 1 }}
+              exit={{ scale: 0.4, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 520, damping: 18 }}
+            >
+              ×{multiplier}
+            </motion.span>
+          )}
+        </AnimatePresence>
         <motion.span
           key={score}
-          className="block h-4 w-4 text-rose"
+          className={`block h-3.5 w-3.5 ${hot ? "text-honey" : "text-rose"}`}
           initial={{ scale: 0.6 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 500, damping: 18 }}
-          style={{ filter: "drop-shadow(0 0 6px rgba(255,158,196,0.7))" }}
+          style={{ filter: `drop-shadow(0 0 6px ${hot ? "rgba(255,206,120,0.8)" : "rgba(255,158,196,0.7)"})` }}
         >
-          <HeartIcon className="h-full w-full" />
+          <HeartIcon className="h-full w-full" gold={hot} />
         </motion.span>
         <span className="min-w-[1.5ch] text-sm tabular-nums text-ink-muted">{score}</span>
       </div>

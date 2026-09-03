@@ -9,7 +9,7 @@ interface FallingHeartProps {
   heart: FallingHeartData;
   /** Playfield height in px, so the heart knows how far to fall. */
   playHeight: number;
-  onCatch: (id: string, x: number, y: number) => void;
+  onCatch: (id: string, x: number, y: number, kind: FallingHeartData["kind"]) => void;
   /** Caught heart finished its pop — just clean it up. */
   onRemove: (id: string) => void;
   /** Heart fell past the bottom without being caught — a miss. */
@@ -21,6 +21,7 @@ const TONE_GLOW: Record<HeartTone, string> = {
   lavender: "drop-shadow(0 0 10px rgba(193,166,255,0.7))",
   blush: "drop-shadow(0 0 10px rgba(247,201,221,0.7))",
 };
+const GOLD_GLOW = "drop-shadow(0 0 14px rgba(255,208,90,0.95)) drop-shadow(0 0 6px rgba(255,158,196,0.8))";
 
 /**
  * A single tappable heart. It falls with a little sway and rotation; when
@@ -37,9 +38,10 @@ function FallingHeartComponent({ heart, playHeight, onCatch, onRemove, onMiss }:
     event.preventDefault();
     caughtRef.current = true;
     setCaught(true);
-    onCatch(heart.id, event.clientX, event.clientY);
+    onCatch(heart.id, event.clientX, event.clientY, heart.kind);
   };
 
+  const gold = heart.kind === "gold";
   const fallDistance = playHeight + heart.size + 120;
 
   return (
@@ -54,7 +56,7 @@ function FallingHeartComponent({ heart, playHeight, onCatch, onRemove, onMiss }:
         width: heart.size + 22,
         height: heart.size + 22,
         marginLeft: -(heart.size + 22) / 2,
-        filter: TONE_GLOW[heart.tone],
+        filter: gold ? GOLD_GLOW : TONE_GLOW[heart.tone],
       }}
       initial={{ y: -heart.size - 40, opacity: 0 }}
       variants={{
@@ -81,9 +83,14 @@ function FallingHeartComponent({ heart, playHeight, onCatch, onRemove, onMiss }:
         caughtRef.current ? onRemove(heart.id) : onMiss(heart.id)
       }
     >
-      <span className="pointer-events-none block" style={{ width: heart.size, height: heart.size }}>
-        <HeartIcon className="h-full w-full" />
-      </span>
+      <motion.span
+        className="pointer-events-none block"
+        style={{ width: heart.size, height: heart.size }}
+        animate={gold && !reduceMotion ? { scale: [1, 1.12, 1] } : undefined}
+        transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <HeartIcon className="h-full w-full" gold={gold} />
+      </motion.span>
     </motion.button>
   );
 }

@@ -6,6 +6,8 @@ interface HeartIconProps {
   className?: string;
   /** Render as a soft outline instead of a filled gradient. */
   outline?: boolean;
+  /** Swap the fill for a warm gold gradient (the game's bonus heart). */
+  gold?: boolean;
   title?: string;
 }
 
@@ -13,7 +15,7 @@ interface HeartIconProps {
  * The single heart shape used everywhere in the experience. Uses a per-instance
  * gradient id so multiple hearts can render with independent fills.
  */
-export function HeartIcon({ className, outline = false, title }: HeartIconProps) {
+export function HeartIcon({ className, outline = false, gold = false, title }: HeartIconProps) {
   const gradientId = useId();
 
   return (
@@ -27,9 +29,19 @@ export function HeartIcon({ className, outline = false, title }: HeartIconProps)
       {title ? <title>{title}</title> : null}
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffd0e6" />
-          <stop offset="55%" stopColor="#ff9ec4" />
-          <stop offset="100%" stopColor="#c1a6ff" />
+          {gold ? (
+            <>
+              <stop offset="0%" stopColor="#fff1c2" />
+              <stop offset="52%" stopColor="#ffd15c" />
+              <stop offset="100%" stopColor="#ff9ec4" />
+            </>
+          ) : (
+            <>
+              <stop offset="0%" stopColor="#ffd0e6" />
+              <stop offset="55%" stopColor="#ff9ec4" />
+              <stop offset="100%" stopColor="#c1a6ff" />
+            </>
+          )}
         </linearGradient>
       </defs>
       <path

@@ -27,11 +27,13 @@ export function Journey({ onFinish }: JourneyProps) {
   const { gameHint, whispers, resultReveal } = useWhispers();
   const [stage, setStage] = useState<ExperienceStage>("landing");
   const [score, setScore] = useState(0);
+  const [bestCombo, setBestCombo] = useState(0);
 
   const goTo = useCallback((next: ExperienceStage) => setStage(next), []);
 
-  const finishGame = useCallback((finalScore: number) => {
+  const finishGame = useCallback((finalScore: number, runBestCombo: number) => {
     setScore(finalScore);
+    setBestCombo(runBestCombo);
     setStage("result");
   }, []);
 
@@ -66,6 +68,7 @@ export function Journey({ onFinish }: JourneyProps) {
             <HeartGameResult
               score={score}
               reveal={resultReveal}
+              bestCombo={bestCombo}
               onContinue={() => goTo("scratch")}
             />
           </Stage>
