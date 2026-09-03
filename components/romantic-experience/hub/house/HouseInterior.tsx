@@ -20,19 +20,49 @@ interface HouseInteriorProps {
   onSelect: (s: Selection) => void;
 }
 
-const OUT = { x: 12, y: 66, w: 276, bottom: 392 };
-const AREA = { x: 20, y: 74, w: 260, h: 310 };
+// The rooms tile the whole house body edge-to-edge; the outline is a thin frame.
+const WALL = 2;
+const OUT = { x: 16, y: 78, w: 268, bottom: 470 };
+const AREA = {
+  x: OUT.x + WALL,
+  y: OUT.y + WALL,
+  w: OUT.w - WALL * 2,
+  h: OUT.bottom - OUT.y - WALL * 2,
+};
 const BAND_H = AREA.h / ROOMS.length;
 
 export function HouseInterior({ house, editing, selected, onSelect }: HouseInteriorProps) {
   const roof = roofHex(house.exterior.roofColor);
 
   return (
-    <svg viewBox="0 0 300 400" className="h-full w-full" role="img" aria-label="Inside your house">
-      {/* roof cap */}
-      <path d="M2 68 L150 16 L298 68 Z" fill={roof} stroke={darken(roof, 0.3)} strokeWidth={1.6} strokeLinejoin="round" />
-      {/* outer walls */}
-      <rect x={OUT.x} y={OUT.y} width={OUT.w} height={OUT.bottom - OUT.y} fill="#efe7db" stroke="#b7ab97" strokeWidth={2} />
+    <svg
+      viewBox="0 0 300 520"
+      preserveAspectRatio="xMidYMid meet"
+      className="h-full w-full"
+      role="img"
+      aria-label="Inside your house"
+    >
+      <defs>
+        <linearGradient id="house-in-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#efe6da" />
+          <stop offset="100%" stopColor="#ddd0bd" />
+        </linearGradient>
+      </defs>
+      {/* the room the doll-house sits in */}
+      <rect x={-20} y={-20} width={340} height={560} fill="url(#house-in-bg)" />
+      <ellipse cx={150} cy={OUT.bottom + 14} rx={130} ry={12} fill="rgba(0,0,0,0.12)" />
+
+      {/* roof cap — sits right on the wall top */}
+      <path
+        d={`M${OUT.x - 14} ${OUT.y + 2} L150 26 L${OUT.x + OUT.w + 14} ${OUT.y + 2} Z`}
+        fill={roof}
+        stroke={darken(roof, 0.3)}
+        strokeWidth={1.6}
+        strokeLinejoin="round"
+      />
+
+      {/* house body — the rooms cover its fill; only the thin frame shows */}
+      <rect x={OUT.x} y={OUT.y} width={OUT.w} height={OUT.bottom - OUT.y} fill="#c3b7a1" />
 
       {ROOMS.map((def, i) => {
         const box = { x: AREA.x, y: AREA.y + i * BAND_H, w: AREA.w, h: BAND_H };
@@ -49,7 +79,7 @@ export function HouseInterior({ house, editing, selected, onSelect }: HouseInter
         );
       })}
 
-      {/* band dividers */}
+      {/* band dividers + outer frame, over the rooms */}
       {ROOMS.slice(1).map((_, i) => (
         <line
           key={i}
@@ -57,10 +87,19 @@ export function HouseInterior({ house, editing, selected, onSelect }: HouseInter
           y1={AREA.y + (i + 1) * BAND_H}
           x2={AREA.x + AREA.w}
           y2={AREA.y + (i + 1) * BAND_H}
-          stroke="#b7ab97"
-          strokeWidth={2}
+          stroke="#c3b7a1"
+          strokeWidth={3}
         />
       ))}
+      <rect
+        x={OUT.x}
+        y={OUT.y}
+        width={OUT.w}
+        height={OUT.bottom - OUT.y}
+        fill="none"
+        stroke="#a89a82"
+        strokeWidth={WALL * 2}
+      />
     </svg>
   );
 }

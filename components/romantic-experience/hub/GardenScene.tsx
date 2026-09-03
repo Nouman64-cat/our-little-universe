@@ -160,8 +160,8 @@ export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneP
       phase,
       scene: SCENERY[phase],
       sun: {
-        left: `${8 + p * 82}%`,
-        top: `${18 + (1 - Math.sin(p * Math.PI)) * 116}px`,
+        left: `${8 + p * 72}%`,
+        top: `${232 + (1 - Math.sin(p * Math.PI)) * 150}px`,
       },
     };
   }, []);
@@ -169,13 +169,13 @@ export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneP
   const isNight = phase === "night";
 
   return (
-    <div className="relative overflow-hidden rounded-[1.75rem] border border-hairline shadow-[0_18px_50px_-24px_rgba(0,0,0,0.45)]">
+    <div className="absolute inset-0 overflow-hidden">
       {/* sky */}
       <div className="absolute inset-0" style={{ background: scene.sky }} />
 
       {/* sky band — celestial elements live here so they stay put as the
           grass below grows with more lilies */}
-      <div className="absolute inset-x-0 top-0 h-[240px] overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-[56%] overflow-hidden">
         {/* stars */}
         {isNight &&
           STARS.map((star, i) => (
@@ -248,34 +248,32 @@ export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneP
         ))}
       </div>
 
-      {/* air + ground (ground grows with the flowers; the sky sits behind it) */}
-      <div className="relative">
-        <div className="h-[190px]" />
-        <div
-          className="relative rounded-t-[50%/40px] px-4 pb-6 pt-9"
-          style={{
-            background: scene.grass,
-            boxShadow: `inset 0 3px 0 ${scene.grassLip}, 0 -12px 30px -12px rgba(0,0,0,0.25)`,
-          }}
-        >
-          {blooms.length > 0 ? (
-            <div className="flex flex-wrap items-end justify-center gap-x-1.5 gap-y-3">
-              {blooms.map((bloom) => (
-                <Flower
-                  key={bloom.id}
-                  bloom={bloom}
-                  fresh={bloom.id === freshId}
-                  reduceMotion={!!reduceMotion}
-                  onOpen={() => onOpen(bloom)}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="py-10 text-center text-sm text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
-              {emptyLine}
-            </p>
-          )}
-        </div>
+      {/* ground — anchored to the bottom, grows upward as more lilies fill it */}
+      <div
+        className="absolute inset-x-0 bottom-0 rounded-t-[50%/46px] px-4 pt-10 pb-[calc(env(safe-area-inset-bottom)+8.5rem)]"
+        style={{
+          background: scene.grass,
+          boxShadow: `inset 0 3px 0 ${scene.grassLip}, 0 -14px 34px -12px rgba(0,0,0,0.28)`,
+          minHeight: "52%",
+        }}
+      >
+        {blooms.length > 0 ? (
+          <div className="mx-auto flex max-w-md flex-wrap items-end justify-center gap-x-1.5 gap-y-3">
+            {blooms.map((bloom) => (
+              <Flower
+                key={bloom.id}
+                bloom={bloom}
+                fresh={bloom.id === freshId}
+                reduceMotion={!!reduceMotion}
+                onOpen={() => onOpen(bloom)}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="py-6 text-center text-sm text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
+            {emptyLine}
+          </p>
+        )}
       </div>
     </div>
   );

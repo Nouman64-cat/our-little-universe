@@ -9,6 +9,12 @@ interface TabScreenProps {
   title?: string;
   /** Optional line under the title. */
   subtitle?: string;
+  /**
+   * Skip the centred, padded column and let the children own the full viewport
+   * (edge-to-edge scenes that float their own chrome). `title`/`subtitle` are
+   * ignored when `bare`.
+   */
+  bare?: boolean;
 }
 
 /**
@@ -16,7 +22,7 @@ interface TabScreenProps {
  * gentle enter transition. `AnimatePresence` lives in `<Hub>`; each screen
  * needs a stable `key` there.
  */
-export function TabScreen({ children, title, subtitle }: TabScreenProps) {
+export function TabScreen({ children, title, subtitle, bare = false }: TabScreenProps) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -27,17 +33,21 @@ export function TabScreen({ children, title, subtitle }: TabScreenProps) {
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pt-[calc(env(safe-area-inset-top)+2.25rem)] pb-[calc(env(safe-area-inset-bottom)+6rem)]">
-        {title && (
-          <header className="mb-6 shrink-0">
-            <h1 className="font-display text-2xl font-medium text-ink">{title}</h1>
-            {subtitle && (
-              <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>
-            )}
-          </header>
-        )}
-        {children}
-      </div>
+      {bare ? (
+        children
+      ) : (
+        <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pt-[calc(env(safe-area-inset-top)+2.25rem)] pb-[calc(env(safe-area-inset-bottom)+6rem)]">
+          {title && (
+            <header className="mb-6 shrink-0">
+              <h1 className="font-display text-2xl font-medium text-ink">{title}</h1>
+              {subtitle && (
+                <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>
+              )}
+            </header>
+          )}
+          {children}
+        </div>
+      )}
     </motion.div>
   );
 }

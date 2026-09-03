@@ -54,96 +54,96 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
   const signLine = `${NAMES.her} & ${NAMES.him}`;
 
   return (
-    <TabScreen>
-      <div className="flex flex-1 flex-col">
-        {/* greeting — kept from the old home screen */}
-        <motion.div {...fade(0.1)} className="mb-4 text-center">
-          <h1 className="font-display text-[1.7rem] font-medium leading-tight text-ink">
-            {timeGreeting},{" "}
-            <span className="text-rose-bright">{nickname}.</span>
+    <TabScreen bare>
+      <div className="relative min-h-dvh w-full overflow-hidden bg-canvas">
+        {/* the house fills the whole screen */}
+        <motion.div
+          key={view}
+          className="absolute inset-0"
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.02 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: EASE_SOFT }}
+        >
+          {view === "outside" ? (
+            <HouseExterior
+              exterior={house.exterior}
+              greeting={signLine}
+              hasUnreadLetter={firstUnreadLetter !== null}
+              lilyCount={blooms.length}
+              editing={editing}
+              selected={selected}
+              onSelect={setSelected}
+              onOpenLetters={() => onNavigate("us")}
+              onOpenGarden={() => onNavigate("garden")}
+            />
+          ) : (
+            <HouseInterior
+              house={house}
+              editing={editing}
+              selected={selected}
+              onSelect={setSelected}
+            />
+          )}
+        </motion.div>
+
+        {/* soft scrim so the floated chrome stays legible over any sky */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/35 via-black/12 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
+
+        {/* greeting — floated over the sky */}
+        <motion.div
+          {...fade(0.15)}
+          className="pointer-events-none absolute inset-x-0 top-0 px-6 pt-[calc(env(safe-area-inset-top)+2.75rem)] text-center"
+        >
+          <h1 className="font-display text-[1.6rem] font-medium leading-tight text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.45)]">
+            {timeGreeting}, <span className="text-rose-bright">{nickname}.</span>
           </h1>
           <p
             suppressHydrationWarning
-            className="mt-1.5 font-display text-sm italic text-ink-muted"
+            className="mt-1 font-display text-sm italic text-white/85 [text-shadow:0_2px_12px_rgba(0,0,0,0.5)]"
           >
             {greetingLine}
           </p>
         </motion.div>
 
-        {/* the house */}
+        {/* controls — a small floating cluster above the nav, centred so the
+            yard/mailbox on the scene edges stay tappable */}
         <motion.div
-          {...fade(0.24)}
-          className="relative mx-auto w-full max-w-[22rem] overflow-hidden rounded-[1.6rem] border border-hairline shadow-[0_18px_50px_-26px_rgba(0,0,0,0.5)]"
+          {...fade(0.32)}
+          className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] flex flex-col items-center gap-2 px-6"
         >
-          <div className={view === "outside" ? "aspect-[10/9]" : "aspect-[3/4]"}>
-            {view === "outside" ? (
-              <HouseExterior
-                exterior={house.exterior}
-                greeting={signLine}
-                hasUnreadLetter={firstUnreadLetter !== null}
-                lilyCount={blooms.length}
-                editing={editing}
-                selected={selected}
-                onSelect={setSelected}
-                onOpenLetters={() => onNavigate("us")}
-                onOpenGarden={() => onNavigate("garden")}
-              />
-            ) : (
-              <HouseInterior
-                house={house}
-                editing={editing}
-                selected={selected}
-                onSelect={setSelected}
-              />
-            )}
+          {editing && <p className="text-center text-[11px] text-white/90 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">{c.hint}</p>}
+          <div className="flex items-center gap-1 rounded-full border border-white/25 bg-black/35 p-1 backdrop-blur-md">
+            <button
+              type="button"
+              onClick={toggleEditing}
+              aria-pressed={editing}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 ${
+                editing ? "bg-rose/30 text-white" : "text-white/85 hover:text-white"
+              }`}
+            >
+              {editing ? c.done : c.decorate}
+            </button>
+            <button
+              type="button"
+              onClick={() => switchView(view === "outside" ? "inside" : "outside")}
+              className="rounded-full px-4 py-2 text-sm font-medium text-white/85 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+            >
+              {view === "outside" ? c.stepInside : c.goOutside}
+            </button>
           </div>
-        </motion.div>
-
-        {/* controls */}
-        <motion.div {...fade(0.38)} className="mx-auto mt-4 flex w-full max-w-[22rem] items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={toggleEditing}
-            aria-pressed={editing}
-            className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 ${
-              editing
-                ? "border-rose bg-rose/15 text-ink"
-                : "border-hairline bg-surface text-ink-muted hover:text-ink"
-            }`}
-          >
-            {editing ? c.done : c.decorate}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => switchView(view === "outside" ? "inside" : "outside")}
-            className="rounded-full border border-hairline bg-surface px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
-          >
-            {view === "outside" ? c.stepInside : c.goOutside}
-          </button>
-        </motion.div>
-
-        {editing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mx-auto mt-4 flex w-full max-w-[22rem] flex-col items-center gap-3"
-          >
-            <p className="text-center text-xs text-ink-faint">{c.hint}</p>
+          {editing ? (
             <ResetButton onReset={resetHouse} />
-          </motion.div>
-        )}
-
-        <div className="flex-1" />
-
-        <motion.button
-          {...fade(0.5)}
-          type="button"
-          onClick={onReplayJourney}
-          className="mx-auto mt-6 text-xs text-ink-faint/70 underline decoration-dotted underline-offset-4 transition-colors hover:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
-        >
-          {copy.hub.home.replay}
-        </motion.button>
+          ) : (
+            <button
+              type="button"
+              onClick={onReplayJourney}
+              className="text-[11px] text-white/75 underline decoration-dotted underline-offset-4 transition-colors hover:text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]"
+            >
+              {copy.hub.home.replay}
+            </button>
+          )}
+        </motion.div>
       </div>
 
       <SheetOverlay
@@ -167,11 +167,11 @@ function ResetButton({ onReset }: { onReset: () => void }) {
     <button
       type="button"
       {...handlers}
-      className="relative overflow-hidden rounded-full border border-hairline px-4 py-1.5 text-xs text-ink-faint transition-colors hover:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+      className="relative touch-none overflow-hidden rounded-full border border-white/25 bg-black/30 px-4 py-1.5 text-[11px] text-white/80 backdrop-blur-md transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
     >
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0 bg-rose/20"
+        className="absolute inset-y-0 left-0 bg-rose/40"
         style={{ width: `${progress * 100}%`, transition: "width 0.09s linear" }}
       />
       <span className="relative">{isHolding ? copy.hub.house.resetHold : copy.hub.house.reset}</span>

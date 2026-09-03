@@ -49,51 +49,66 @@ export function GardenTab() {
   });
 
   return (
-    <TabScreen
-      title={copy.hub.garden.title(nickname)}
-      subtitle={copy.hub.garden.subtitle}
-    >
-      <div className="mb-5 flex items-center gap-2 text-sm text-ink-muted">
-        <span className="rounded-full bg-surface px-3 py-1">
-          {blooms.length} {blooms.length === 1 ? "lily" : "lilies"}
-        </span>
-        {streak > 1 && (
-          <span className="rounded-full bg-rose/15 px-3 py-1 text-rose">
-            {streak} days in a row
-          </span>
-        )}
-      </div>
+    <TabScreen bare>
+      <div className="relative min-h-dvh w-full overflow-hidden">
+        <GardenScene
+          blooms={blooms}
+          freshId={freshId}
+          emptyLine={copy.hub.garden.empty}
+          onOpen={setSelected}
+        />
 
-      <GardenScene
-        blooms={blooms}
-        freshId={freshId}
-        emptyLine={copy.hub.garden.empty}
-        onOpen={setSelected}
-      />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-gradient-to-b from-black/35 via-black/12 to-transparent" />
 
-      {/* plant control — hold and the soil fills */}
-      <div className="mt-6 flex flex-col items-center">
-        <button
-          type="button"
-          {...handlers}
-          aria-label="Press and hold to plant a lily"
-          className="relative flex h-14 w-48 touch-none items-center justify-center gap-2 overflow-hidden rounded-full border border-hairline-strong bg-surface text-sm font-medium text-ink-muted backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+        {/* title + counts, floated over the sky */}
+        <motion.div
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: EASE_SOFT, delay: 0.15 }}
+          className="pointer-events-none absolute inset-x-0 top-0 px-6 pt-[calc(env(safe-area-inset-top)+2.75rem)] text-center"
         >
-          <span
-            aria-hidden
-            className="absolute inset-x-0 bottom-0"
-            style={{
-              height: `${progress * 100}%`,
-              background:
-                "linear-gradient(to top, color-mix(in srgb, var(--color-leaf) 55%, transparent), color-mix(in srgb, var(--color-leaf) 20%, transparent))",
-              transition: reduceMotion ? undefined : "height 0.09s linear",
-            }}
-          />
-          <Sprout className="relative h-5 w-5 text-leaf" />
-          <span className="relative">
-            {isHolding ? copy.hub.garden.planting : copy.hub.garden.plant}
-          </span>
-        </button>
+          <h1 className="font-display text-2xl font-medium text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.5)]">
+            {copy.hub.garden.title(nickname)}
+          </h1>
+          <p className="mt-1 text-sm text-white/85 [text-shadow:0_2px_12px_rgba(0,0,0,0.55)]">
+            {copy.hub.garden.subtitle}
+          </p>
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs">
+            <span className="rounded-full border border-white/25 bg-black/30 px-3 py-1 text-white/90 backdrop-blur-sm">
+              {blooms.length} {blooms.length === 1 ? "lily" : "lilies"}
+            </span>
+            {streak > 1 && (
+              <span className="rounded-full border border-rose/40 bg-rose/25 px-3 py-1 text-white backdrop-blur-sm">
+                {streak} days in a row
+              </span>
+            )}
+          </div>
+        </motion.div>
+
+        {/* plant control — hold and the soil fills */}
+        <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] flex justify-center px-6">
+          <button
+            type="button"
+            {...handlers}
+            aria-label="Press and hold to plant a lily"
+            className="relative flex h-14 w-48 touch-none items-center justify-center gap-2 overflow-hidden rounded-full border border-white/30 bg-black/35 text-sm font-medium text-white/90 backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+          >
+            <span
+              aria-hidden
+              className="absolute inset-x-0 bottom-0"
+              style={{
+                height: `${progress * 100}%`,
+                background:
+                  "linear-gradient(to top, color-mix(in srgb, var(--color-leaf) 55%, transparent), color-mix(in srgb, var(--color-leaf) 20%, transparent))",
+                transition: reduceMotion ? undefined : "height 0.09s linear",
+              }}
+            />
+            <Sprout className="relative h-5 w-5 text-leaf" />
+            <span className="relative">
+              {isHolding ? copy.hub.garden.planting : copy.hub.garden.plant}
+            </span>
+          </button>
+        </div>
       </div>
 
       <NoteOverlay
