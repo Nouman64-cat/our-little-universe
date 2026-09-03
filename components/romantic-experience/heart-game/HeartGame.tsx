@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, useReducedMotion } from "motion/react";
-import { GAME_DURATION_MS, HEART_SPAWN_INTERVAL_MS } from "@/lib/config";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { GAME_MAX_MISSES, HEART_SPAWN_INTERVAL_MS } from "@/lib/config";
 import { createId, haptic, pickOne, randomBetween } from "@/lib/utils";
 import { FallingHeart } from "./FallingHeart";
 import { GameHud } from "./GameHud";
@@ -53,16 +53,17 @@ export function HeartGame({
   const reduceMotion = useReducedMotion();
   const playfieldRef = useRef<HTMLDivElement>(null);
 
-  const [endTime] = useState(() => Date.now() + GAME_DURATION_MS);
   const [phase, setPhase] = useState<"playing" | "ending">("playing");
   const [hearts, setHearts] = useState<FallingHeartData[]>(() =>
     Array.from({ length: 3 }, createHeart),
   );
   const [bursts, setBursts] = useState<BurstData[]>([]);
   const [score, setScore] = useState(0);
+  const [misses, setMisses] = useState(0);
   const [playHeight, setPlayHeight] = useState(0);
 
   const scoreRef = useRef(0);
+  const endedRef = useRef(false);
   const expireTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Lock page scrolling for the duration of the game so taps never pan the page.
@@ -100,7 +101,9 @@ export function HeartGame({
     return () => clearInterval(interval);
   }, [phase]);
 
-  const handleExpire = useCallback(() => {
+  const endGame = useCallback(() => {
+    if (endedRef.current) return;
+    endedRef.current = true;
     setPhase("ending");
     // Let the last hearts drift a moment before the hand-off.
     expireTimeoutRef.current = setTimeout(
@@ -114,6 +117,19 @@ export function HeartGame({
       if (expireTimeoutRef.current) clearTimeout(expireTimeoutRef.current);
     };
   }, []);
+
+  const handleMiss = useCallback((id: string) => {
+    setHearts((current) => current.filter((heart) => heart.id !== id));
+    if (endedRef.current) return;
+    setMisses((current) => current + 1);
+    // A heavier double-buzz than a catch, so a slip past is felt, not just seen.
+    haptic([16, 45, 16]);
+  }, []);
+
+  // Out of lives — hand off to the result screen.
+  useEffect(() => {
+    if (misses >= GAME_MAX_MISSES) endGame();
+  }, [misses, endGame]);
 
   const handleCatch = useCallback(
     (_id: string, clientX: number, clientY: number) => {
@@ -148,12 +164,21 @@ export function HeartGame({
         embedded ? "h-full" : "h-dvh",
       ].join(" ")}
     >
-      <GameHud
-        endTime={endTime}
-        score={score}
-        onExpire={handleExpire}
-        embedded={embedded}
-      />
+      <GameHud misses={misses} score={score} embedded={embedded} />
+
+      {/* A soft red wash up from the bottom edge the instant a heart slips past. */}
+      <AnimatePresence>
+        {misses > 0 && phase === "playing" && (
+          <motion.div
+            key={misses}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-rose/35 to-transparent"
+            initial={{ opacity: reduceMotion ? 0.5 : 0 }}
+            animate={{ opacity: [0, 0.9, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          />
+        )}
+      </AnimatePresence>
 
       <Whispers lines={whispers} />
 
@@ -174,6 +199,7 @@ export function HeartGame({
             playHeight={playHeight}
             onCatch={handleCatch}
             onRemove={handleRemoveHeart}
+            onMiss={handleMiss}
           />
         ))}
 

@@ -1,73 +1,61 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
+import { memo } from "react";
 import { motion } from "motion/react";
-import { GAME_DURATION_MS } from "@/lib/config";
+import { GAME_MAX_MISSES } from "@/lib/config";
 import { HeartIcon } from "../ui/HeartIcon";
 
 interface GameHudProps {
-  /** Absolute timestamp (ms) when the game ends. */
-  endTime: number;
+  /** Hearts missed so far (0 – GAME_MAX_MISSES). */
+  misses: number;
   score: number;
-  onExpire: () => void;
   /** Sit near the top edge (hub) instead of below the journey progress bar. */
   embedded?: boolean;
 }
 
-const TOTAL_SECONDS = Math.round(GAME_DURATION_MS / 1000);
-
 /**
- * Time + hearts collected. The countdown owns its own ticking state so the
- * ~4 updates/second never touch the heart list or the score.
+ * Lives + hearts collected. Five pips on the left dim one at a time as hearts
+ * slip past; the whole pill jolts and the count updates on each miss, and the
+ * game ends when the last one goes out.
  */
-function Countdown({ endTime, onExpire }: { endTime: number; onExpire: () => void }) {
-  const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
-  const expiredRef = useRef(false);
-  const onExpireRef = useRef(onExpire);
-
-  useEffect(() => {
-    onExpireRef.current = onExpire;
-  }, [onExpire]);
-
-  useEffect(() => {
-    const update = () => {
-      const remaining = Math.max(0, endTime - Date.now());
-      setSecondsLeft(Math.ceil(remaining / 1000));
-      if (remaining <= 0 && !expiredRef.current) {
-        expiredRef.current = true;
-        onExpireRef.current();
-      }
-    };
-    update();
-    const interval = setInterval(update, 250);
-    return () => clearInterval(interval);
-  }, [endTime]);
-
-  const fraction = secondsLeft / TOTAL_SECONDS;
+function Lives({ misses }: { misses: number }) {
+  const left = Math.max(0, GAME_MAX_MISSES - misses);
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 backdrop-blur-md">
-      <svg viewBox="0 0 24 24" className="h-4 w-4 -rotate-90">
-        <circle cx="12" cy="12" r="9" fill="none" stroke="var(--color-hairline-strong)" strokeWidth="3" />
-        <circle
-          cx="12"
-          cy="12"
-          r="9"
-          fill="none"
-          stroke="#ff9ec4"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray={2 * Math.PI * 9}
-          strokeDashoffset={2 * Math.PI * 9 * (1 - fraction)}
-          style={{ transition: "stroke-dashoffset 0.25s linear" }}
-        />
-      </svg>
-      <span className="min-w-[1.5ch] text-sm tabular-nums text-ink-muted">{secondsLeft}s</span>
-    </div>
+    <motion.div
+      className="flex items-center gap-1.5 rounded-full border border-hairline bg-surface py-1.5 pl-3 pr-2.5 backdrop-blur-md"
+      aria-label={`${left} ${left === 1 ? "miss" : "misses"} left`}
+      animate={misses > 0 ? { x: [0, -5, 5, -3, 0] } : { x: 0 }}
+      transition={{ duration: 0.32, ease: "easeInOut" }}
+    >
+      {Array.from({ length: GAME_MAX_MISSES }, (_, i) => {
+        const spent = i >= left;
+        const justSpent = misses > 0 && i === left;
+        return (
+          <motion.span
+            key={i}
+            className={spent ? "block h-3 w-3 text-ink-faint/30" : "block h-3 w-3 text-rose"}
+            animate={justSpent ? { scale: [1, 1.5, 0.9, 1.1, 1] } : { scale: 1 }}
+            transition={{ duration: 0.42, ease: "easeOut" }}
+          >
+            <HeartIcon className="h-full w-full" />
+          </motion.span>
+        );
+      })}
+      <motion.span
+        key={left}
+        className="ml-1 min-w-[1.25ch] text-xs tabular-nums text-ink-muted"
+        initial={{ scale: 0.7, opacity: 0.4 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 500, damping: 20 }}
+      >
+        {left}
+      </motion.span>
+    </motion.div>
   );
 }
 
-function GameHudComponent({ endTime, score, onExpire, embedded = false }: GameHudProps) {
+function GameHudComponent({ misses, score, embedded = false }: GameHudProps) {
   return (
     <div
       className={[
@@ -76,7 +64,7 @@ function GameHudComponent({ endTime, score, onExpire, embedded = false }: GameHu
       ].join(" ")}
       aria-live="polite"
     >
-      <Countdown endTime={endTime} onExpire={onExpire} />
+      <Lives misses={misses} />
       <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 backdrop-blur-md">
         <motion.span
           key={score}

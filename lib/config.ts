@@ -3,8 +3,8 @@ import type { Chapter, ExperienceStage } from "@/types/experience";
 /** What he calls her — woven lightly into the hub, not stamped everywhere. */
 export const NICKNAME = "chuchu";
 
-/** Length of the "Catch the Hearts" mini-game. */
-export const GAME_DURATION_MS = 15_000;
+/** Missed hearts (fell past uncaught) that end the "Catch the Hearts" mini-game. */
+export const GAME_MAX_MISSES = 5;
 
 /** How often a new heart is released while the game is running. */
 export const HEART_SPAWN_INTERVAL_MS = 470;
@@ -88,7 +88,7 @@ export const copy = {
     },
     game: {
       title: "Catch the hearts",
-      subtitle: "fifteen seconds. no pressure.",
+      subtitle: "five misses and it's over. no pressure.",
       start: "Play ♡",
       again: "Play again",
       done: "done",

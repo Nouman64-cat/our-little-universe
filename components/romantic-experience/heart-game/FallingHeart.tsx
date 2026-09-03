@@ -10,8 +10,10 @@ interface FallingHeartProps {
   /** Playfield height in px, so the heart knows how far to fall. */
   playHeight: number;
   onCatch: (id: string, x: number, y: number) => void;
-  /** Called when the heart should be removed (fell off-screen or finished its pop). */
+  /** Caught heart finished its pop — just clean it up. */
   onRemove: (id: string) => void;
+  /** Heart fell past the bottom without being caught — a miss. */
+  onMiss: (id: string) => void;
 }
 
 const TONE_GLOW: Record<HeartTone, string> = {
@@ -25,7 +27,7 @@ const TONE_GLOW: Record<HeartTone, string> = {
  * caught it pops in place instead of continuing down. Memoised so sibling
  * spawns/removals don't re-render every heart.
  */
-function FallingHeartComponent({ heart, playHeight, onCatch, onRemove }: FallingHeartProps) {
+function FallingHeartComponent({ heart, playHeight, onCatch, onRemove, onMiss }: FallingHeartProps) {
   const reduceMotion = useReducedMotion();
   const [caught, setCaught] = useState(false);
   const caughtRef = useRef(false);
@@ -75,7 +77,9 @@ function FallingHeartComponent({ heart, playHeight, onCatch, onRemove }: Falling
         rotate: { duration: heart.duration, ease: "linear" },
         opacity: { duration: 0.4 },
       }}
-      onAnimationComplete={() => onRemove(heart.id)}
+      onAnimationComplete={() =>
+        caughtRef.current ? onRemove(heart.id) : onMiss(heart.id)
+      }
     >
       <span className="pointer-events-none block" style={{ width: heart.size, height: heart.size }}>
         <HeartIcon className="h-full w-full" />
