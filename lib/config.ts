@@ -127,7 +127,7 @@ export const copy = {
       empty: "come back tomorrow and watch it fill in",
     },
     teddy: {
-      title: "someone waited up",
+      title: "they waited up",
       hug: "send a hug",
       hugged: (n: number) => `${n} ${n === 1 ? "hug" : "hugs"} sent`,
     },
