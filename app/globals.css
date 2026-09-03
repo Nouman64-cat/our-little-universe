@@ -33,24 +33,25 @@
 }
 
 /*
- * Theme scopes. The journey is always dark and doesn't opt in; the hub wraps
- * itself in `.theme-light` / `.theme-dark` (see `theme-context.tsx`) so the
- * whole subtree — including its fixed backdrop — resolves the right tokens.
- * `.theme-dark` restates the defaults so an explicit choice always wins.
+ * Theme scopes. The theme rides on `<html data-theme>`, set by
+ * `theme-context.tsx` while the hub is mounted and absent everywhere else — so
+ * the first-run journey stays dark. Dark is the `@theme` default above;
+ * `[data-theme="dark"]` only needs to pin `color-scheme` back when an explicit
+ * choice overrides a light system.
  */
-.theme-dark {
+:root[data-theme="dark"] {
   color-scheme: dark;
 }
 
-.theme-light {
+:root[data-theme="light"] {
   color-scheme: light;
 
   --color-canvas: #fbf3f7;
   --color-canvas-raised: #ffffff;
 
-  --color-ink: #33253b;
-  --color-ink-muted: #665472;
-  --color-ink-faint: #857191;
+  --color-ink: #2c1e38;
+  --color-ink-muted: #574764;
+  --color-ink-faint: #6d5b7a;
 
   --color-rose: #d85f97;
   --color-rose-bright: #c44d86;
@@ -70,7 +71,8 @@
 
 @layer base {
   :root {
-    /* Hairline drawn on the lily petals; darkens under `.theme-light`. */
+    color-scheme: dark;
+    /* Hairline on the lily petals; the theme scopes above darken it in light. */
     --lily-stroke: rgba(255, 255, 255, 0.4);
   }
 

@@ -64,13 +64,15 @@ export function GameTab() {
 
   return (
     <motion.div
-      className="theme-dark flex min-h-dvh w-full flex-col text-ink"
+      // Follows the hub's theme. `isolate` + an opaque `bg-canvas` keep the
+      // playfield on its own solid ground so the falling hearts read cleanly.
+      className="isolate flex min-h-dvh w-full flex-col bg-canvas text-ink"
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
       transition={{ duration: 0.28, ease: EASE_SOFT }}
     >
-      {/* The catching game is always played in the dark, like the journey's. */}
+      {/* Covers the viewport while the playfield scrolls under the hearts. */}
       <div aria-hidden className="fixed inset-0 -z-10 bg-canvas" />
 
       {phase === "intro" && (

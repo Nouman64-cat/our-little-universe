@@ -34,7 +34,7 @@ export function Whispers({ lines }: WhispersProps) {
       <AnimatePresence mode="wait">
         <motion.p
           key={index}
-          className="text-center font-display text-base italic text-blush/45"
+          className="text-center font-display text-base italic text-rose/45"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}

@@ -4,22 +4,19 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
-type ThemePref = "light" | "dark" | "system";
 type Theme = "light" | "dark";
 
 interface ThemeValue {
-  /** The theme actually in effect right now. */
+  /** The theme in effect right now. */
   theme: Theme;
-  /** What she picked — `"system"` until she taps the toggle. */
-  pref: ThemePref;
-  /** Flip to the opposite of what's showing and remember it. */
+  /** Flip to the opposite and remember it on this device. */
   toggle: () => void;
 }
 
@@ -31,57 +28,52 @@ const THEME_COLORS: Record<Theme, string> = {
   light: "#fbf3f7",
 };
 
-function readPref(): ThemePref {
-  if (typeof window === "undefined") return "system";
+/**
+ * Her saved choice. Dark is the default until she taps the toggle — the hub no
+ * longer follows the OS setting, so what she picks is what she gets.
+ */
+function readTheme(): Theme {
+  if (typeof window === "undefined") return "dark";
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "light" || stored === "dark") return stored;
+    return window.localStorage.getItem(STORAGE_KEY) === "light"
+      ? "light"
+      : "dark";
   } catch {
-    // Private mode / disabled storage — fall back to following the system.
+    // Private mode / disabled storage — just start dark.
+    return "dark";
   }
-  return "system";
-}
-
-function systemPrefersDark(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true;
 }
 
 /**
- * Owns the hub's light/dark choice. Defaults to following the device, and
- * remembers an explicit pick on the device. Only the hub is wrapped in this —
- * the first-run journey stays dark regardless.
+ * Owns the hub's light/dark choice. The theme rides on `<html data-theme>` so
+ * the page background, scrollbar and mobile browser chrome all move with it —
+ * not just the hub subtree. Only the hub mounts this; the first-run journey and
+ * the catching game have no `data-theme` and stay dark.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [pref, setPref] = useState<ThemePref>(readPref);
-  const [systemDark, setSystemDark] = useState<boolean>(systemPrefersDark);
+  const [theme, setTheme] = useState<Theme>(readTheme);
 
-  // Track the OS setting so "system" stays live without a reload.
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => setSystemDark(query.matches);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
+  // This provider only ever mounts on the client (behind the entry veil), so a
+  // layout effect is safe here and avoids a first-frame flash of the old theme.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
 
-  const theme: Theme =
-    pref === "system" ? (systemDark ? "dark" : "light") : pref;
-
-  // Keep the mobile browser chrome in step with the hub.
-  useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", THEME_COLORS[theme]);
+    meta?.setAttribute("content", THEME_COLORS[theme]);
+
     return () => {
-      const el = document.querySelector('meta[name="theme-color"]');
-      if (el) el.setAttribute("content", THEME_COLORS.dark);
+      // Hand the document back to dark on the way out (e.g. replaying the journey).
+      delete root.dataset.theme;
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", THEME_COLORS.dark);
     };
   }, [theme]);
 
   const toggle = useCallback(() => {
-    setPref((current) => {
-      const showing =
-        current === "system" ? (systemPrefersDark() ? "dark" : "light") : current;
-      const next: Theme = showing === "dark" ? "light" : "dark";
+    setTheme((current) => {
+      const next: Theme = current === "dark" ? "light" : "dark";
       try {
         window.localStorage.setItem(STORAGE_KEY, next);
       } catch {
@@ -91,15 +83,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const value = useMemo<ThemeValue>(
-    () => ({ theme, pref, toggle }),
-    [theme, pref, toggle],
-  );
+  const value = useMemo<ThemeValue>(() => ({ theme, toggle }), [theme, toggle]);
 
   return (
-    <div className={theme === "light" ? "theme-light" : "theme-dark"}>
-      <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-    </div>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
 

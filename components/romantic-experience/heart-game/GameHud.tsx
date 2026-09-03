@@ -46,9 +46,9 @@ function Countdown({ endTime, onExpire }: { endTime: number; onExpire: () => voi
   const fraction = secondsLeft / TOTAL_SECONDS;
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-md">
+    <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 backdrop-blur-md">
       <svg viewBox="0 0 24 24" className="h-4 w-4 -rotate-90">
-        <circle cx="12" cy="12" r="9" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="3" />
+        <circle cx="12" cy="12" r="9" fill="none" stroke="var(--color-hairline-strong)" strokeWidth="3" />
         <circle
           cx="12"
           cy="12"
@@ -77,7 +77,7 @@ function GameHudComponent({ endTime, score, onExpire, embedded = false }: GameHu
       aria-live="polite"
     >
       <Countdown endTime={endTime} onExpire={onExpire} />
-      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-md">
+      <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 backdrop-blur-md">
         <motion.span
           key={score}
           className="block h-4 w-4 text-rose"
