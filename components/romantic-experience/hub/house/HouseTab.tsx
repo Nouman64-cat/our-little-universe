@@ -51,7 +51,7 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
     setSelected(null);
   }, []);
 
-  const signLine = `${NAMES.him} & ${NAMES.her}`;
+  const signLine = `${NAMES.her} & ${NAMES.him}`;
 
   return (
     <TabScreen>

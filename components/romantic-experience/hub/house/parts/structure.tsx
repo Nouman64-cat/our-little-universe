@@ -249,15 +249,21 @@ export function Mailbox({ hasMail = false }: { hasMail?: boolean }) {
 export function WelcomeSign({ line }: { line: string }) {
   const board = "#f3e8d3";
   const edge = "#b79b73";
+  // The board hangs from two short stakes; the text is forced to fit its inner
+  // width with textLength so any sign wording stays inside the frame.
+  const W = 72;
+  const cx = W / 2 - 8; // board runs x = -8 .. W-8
   return (
     <g>
-      <path d="M6 0 v9 M38 0 v9" stroke="#8a7355" strokeWidth={STROKE * 1.4} />
-      <rect x={-6} y={7} width={56} height={19} rx={3.5} fill={board} stroke={edge} strokeWidth={STROKE * 1.2} />
+      <path d={`M2 0 v9 M${W - 18} 0 v9`} stroke="#8a7355" strokeWidth={STROKE * 1.4} />
+      <rect x={-8} y={7} width={W} height={18} rx={3.5} fill={board} stroke={edge} strokeWidth={STROKE * 1.2} />
       <text
-        x={22}
-        y={20}
+        x={cx}
+        y={19.5}
         textAnchor="middle"
-        fontSize={8.5}
+        textLength={W - 14}
+        lengthAdjust="spacingAndGlyphs"
+        fontSize={7}
         fontStyle="italic"
         fontWeight={500}
         fill="#6a4c39"

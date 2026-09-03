@@ -171,7 +171,7 @@ export function HouseExterior({
       </g>
 
       {/* welcome sign */}
-      <g transform="translate(128 100)">
+      <g transform="translate(122 100)">
         <WelcomeSign line={greeting} />
       </g>
 
