@@ -14,9 +14,10 @@ interface GameHudProps {
 }
 
 /**
- * Lives + hearts collected. Five pips on the left dim one at a time as hearts
- * slip past; the whole pill jolts and the count updates on each miss, and the
- * game ends when the last one goes out.
+ * Lives + hearts collected. Five pips on the left: a live one is a bright,
+ * glowing rose heart; the instant a heart slips past, the next pip flips to a
+ * flat grey — so the colour itself tells you how many are left. The pill jolts
+ * and the trailing number ticks down on each miss; the game ends at zero.
  */
 function Lives({ misses }: { misses: number }) {
   const left = Math.max(0, GAME_MAX_MISSES - misses);
@@ -24,7 +25,7 @@ function Lives({ misses }: { misses: number }) {
   return (
     <motion.div
       className="flex items-center gap-1.5 rounded-full border border-hairline bg-surface py-1.5 pl-3 pr-2.5 backdrop-blur-md"
-      aria-label={`${left} ${left === 1 ? "miss" : "misses"} left`}
+      aria-label={`${left} of ${GAME_MAX_MISSES} hearts left`}
       animate={misses > 0 ? { x: [0, -5, 5, -3, 0] } : { x: 0 }}
       transition={{ duration: 0.32, ease: "easeInOut" }}
     >
@@ -34,9 +35,19 @@ function Lives({ misses }: { misses: number }) {
         return (
           <motion.span
             key={i}
-            className={spent ? "block h-3 w-3 text-ink-faint/30" : "block h-3 w-3 text-rose"}
-            animate={justSpent ? { scale: [1, 1.5, 0.9, 1.1, 1] } : { scale: 1 }}
-            transition={{ duration: 0.42, ease: "easeOut" }}
+            className="block h-3 w-3"
+            style={{
+              // Alive: bright rose with a glow. Missed: a plain neutral grey,
+              // no pink left in it, so the count reads at a glance.
+              color: spent ? "rgba(190,190,200,0.55)" : "var(--color-rose)",
+              filter: spent ? "none" : "drop-shadow(0 0 4px rgba(255,158,196,0.85))",
+            }}
+            animate={
+              justSpent
+                ? { scale: [1, 1.5, 0.85, 1.1, 1], rotate: [0, -12, 10, 0] }
+                : { scale: 1, rotate: 0 }
+            }
+            transition={{ duration: 0.45, ease: "easeOut" }}
           >
             <HeartIcon className="h-full w-full" />
           </motion.span>

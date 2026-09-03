@@ -6,7 +6,8 @@ import type { HubTab } from "@/types/experience";
 import { BottomNav } from "./BottomNav";
 import { GameTab } from "./GameTab";
 import { GardenTab } from "./GardenTab";
-import { HomeTab } from "./HomeTab";
+import { HouseProvider } from "./house-context";
+import { HouseTab } from "./house/HouseTab";
 import { HubBackdrop } from "./HubBackdrop";
 import { SweetsTab } from "./SweetsTab";
 import { TeddyTab } from "./TeddyTab";
@@ -23,23 +24,25 @@ export function Hub({ onReplayJourney }: HubProps) {
 
   return (
     <ThemeProvider>
-      <div className="relative min-h-dvh text-ink">
-        <HubBackdrop />
-        {tab !== "game" && <ThemeToggle />}
+      <HouseProvider>
+        <div className="relative min-h-dvh text-ink">
+          <HubBackdrop />
+          {tab !== "game" && <ThemeToggle />}
 
-        <AnimatePresence mode="wait">
-          {tab === "home" && (
-            <HomeTab key="home" onNavigate={setTab} onReplayJourney={onReplayJourney} />
-          )}
-          {tab === "game" && <GameTab key="game" />}
-          {tab === "sweets" && <SweetsTab key="sweets" />}
-          {tab === "garden" && <GardenTab key="garden" />}
-          {tab === "teddy" && <TeddyTab key="teddy" />}
-          {tab === "us" && <UsTab key="us" />}
-        </AnimatePresence>
+          <AnimatePresence mode="wait">
+            {tab === "home" && (
+              <HouseTab key="home" onNavigate={setTab} onReplayJourney={onReplayJourney} />
+            )}
+            {tab === "game" && <GameTab key="game" />}
+            {tab === "sweets" && <SweetsTab key="sweets" />}
+            {tab === "garden" && <GardenTab key="garden" />}
+            {tab === "teddy" && <TeddyTab key="teddy" />}
+            {tab === "us" && <UsTab key="us" />}
+          </AnimatePresence>
 
-        <BottomNav active={tab} onChange={setTab} />
-      </div>
+          <BottomNav active={tab} onChange={setTab} />
+        </div>
+      </HouseProvider>
     </ThemeProvider>
   );
 }

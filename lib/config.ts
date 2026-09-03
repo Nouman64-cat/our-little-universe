@@ -3,6 +3,9 @@ import type { Chapter, ExperienceStage } from "@/types/experience";
 /** What he calls her — woven lightly into the hub, not stamped everywhere. */
 export const NICKNAME = "chuchu";
 
+/** The two of them, for the shared spaces (the house on the home screen). */
+export const NAMES = { him: "cheeku", her: NICKNAME } as const;
+
 /** Missed hearts (fell past uncaught) that end the "Catch the Hearts" mini-game. */
 export const GAME_MAX_MISSES = 5;
 
@@ -85,6 +88,15 @@ export const copy = {
         streak > 1
           ? `${streak} days of lilies`
           : `${count} ${count === 1 ? "lily" : "lilies"}, and counting`,
+    },
+    house: {
+      decorate: "decorate",
+      done: "done",
+      stepInside: "step inside ♡",
+      goOutside: "go outside",
+      hint: "tap any part of the house to change it",
+      reset: "start this home over",
+      resetHold: "hold to start over…",
     },
     game: {
       title: "Catch the hearts",
