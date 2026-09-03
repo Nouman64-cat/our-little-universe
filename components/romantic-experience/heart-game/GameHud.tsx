@@ -14,10 +14,10 @@ interface GameHudProps {
 }
 
 /**
- * Lives + hearts collected. Five pips on the left: a live one is a bright,
- * glowing rose heart; the instant a heart slips past, the next pip flips to a
- * flat grey — so the colour itself tells you how many are left. The pill jolts
- * and the trailing number ticks down on each miss; the game ends at zero.
+ * Lives + hearts collected. Five pips on the left: a live one is a filled,
+ * glowing rose heart; the instant a heart slips past, the next pip hollows out
+ * to a flat grey outline — filled vs empty, so the count reads at a glance.
+ * The pill jolts and the trailing number ticks down on each miss; ends at zero.
  */
 function Lives({ misses }: { misses: number }) {
   const left = Math.max(0, GAME_MAX_MISSES - misses);
@@ -37,9 +37,9 @@ function Lives({ misses }: { misses: number }) {
             key={i}
             className="block h-3 w-3"
             style={{
-              // Alive: bright rose with a glow. Missed: a plain neutral grey,
-              // no pink left in it, so the count reads at a glance.
-              color: spent ? "rgba(190,190,200,0.55)" : "var(--color-rose)",
+              // `HeartIcon` only honours colour in its outline form, so a spent
+              // pip must switch to the hollow variant to actually go grey.
+              color: spent ? "rgba(188,184,192,0.65)" : "var(--color-rose)",
               filter: spent ? "none" : "drop-shadow(0 0 4px rgba(255,158,196,0.85))",
             }}
             animate={
@@ -49,7 +49,7 @@ function Lives({ misses }: { misses: number }) {
             }
             transition={{ duration: 0.45, ease: "easeOut" }}
           >
-            <HeartIcon className="h-full w-full" />
+            <HeartIcon className="h-full w-full" outline={spent} />
           </motion.span>
         );
       })}
