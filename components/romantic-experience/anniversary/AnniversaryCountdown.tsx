@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useNow } from "@/hooks/useNow";
 import { NAMES } from "@/lib/config";
 import { EASE_SOFT } from "@/lib/motion";
 import { clamp } from "@/lib/utils";
@@ -45,25 +46,6 @@ function formatPakistanClock(pk: { hour: number; minute: number; second: number 
   const h12 = pk.hour % 12 === 0 ? 12 : pk.hour % 12;
   const period = pk.hour < 12 ? "AM" : "PM";
   return `${pad(h12)}:${pad(pk.minute)}:${pad(pk.second)} ${period}`;
-}
-
-/** Ticks a listener once a second — the external store behind `useNow`. */
-function subscribeToClock(callback: () => void): () => void {
-  const id = setInterval(callback, 1000);
-  return () => clearInterval(id);
-}
-
-/**
- * The current epoch ms, ticking once a second on the client. `null` until
- * hydration (matching a deterministic server render, per this codebase's
- * `useSyncExternalStore` convention — see `RomanticExperience.tsx`).
- */
-function useNow(): number | null {
-  return useSyncExternalStore<number | null>(
-    subscribeToClock,
-    () => Date.now(),
-    () => null,
-  );
 }
 
 function ordinal(n: number): string {

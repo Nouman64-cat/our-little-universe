@@ -132,6 +132,15 @@ export function splitDuration(ms: number) {
   };
 }
 
+/** "3d 4h", "5h 12m", or "48s" — whichever two units read best for a compact badge. */
+export function formatCompactDuration(ms: number): string {
+  const { days, hours, minutes, seconds } = splitDuration(ms);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",

@@ -10,6 +10,7 @@ import { haptic } from "@/lib/utils";
 import type { HubTab } from "@/types/experience";
 import { useKeepsakes } from "../keepsake-context";
 import { useHouse } from "../house-context";
+import { MonthiversaryBadge } from "../MonthiversaryBadge";
 import { TabScreen } from "../ui/TabScreen";
 import { SheetOverlay } from "../ui/SheetOverlay";
 import { HouseExterior } from "./HouseExterior";
@@ -137,6 +138,7 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
           >
             {greetingLine}
           </p>
+          <MonthiversaryBadge />
         </motion.div>
 
         {/* controls — a small floating cluster above the nav, centred so the
