@@ -29,7 +29,7 @@ export function MonthiversaryBadge() {
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: EASE_SOFT, delay: 0.45 }}
-      className="pointer-events-auto mt-3 flex justify-center"
+      className="pointer-events-auto"
     >
       <Link
         href="/anniversary"

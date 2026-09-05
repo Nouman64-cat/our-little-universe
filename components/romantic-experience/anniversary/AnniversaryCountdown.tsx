@@ -42,12 +42,6 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-function formatPakistanClock(pk: { hour: number; minute: number; second: number }): string {
-  const h12 = pk.hour % 12 === 0 ? 12 : pk.hour % 12;
-  const period = pk.hour < 12 ? "AM" : "PM";
-  return `${pad(h12)}:${pad(pk.minute)}:${pad(pk.second)} ${period}`;
-}
-
 function ordinal(n: number): string {
   const v = n % 100;
   if (v >= 11 && v <= 13) return `${n}th`;
@@ -235,17 +229,15 @@ export function AnniversaryCountdown() {
 
           <div className="rounded-2xl border border-hairline bg-surface px-4 py-3">
             <p className="text-[0.65rem] uppercase tracking-[0.18em] text-ink-faint">
-              right now in pakistan
+              next monthiversary in
             </p>
             <p
               className="mt-1 font-display text-lg tabular-nums text-ink"
               suppressHydrationWarning
             >
-              {ready ? formatPakistanClock(pk) : "--:--:-- --"}
-            </p>
-            <p className="mt-0.5 text-xs text-ink-muted" suppressHydrationWarning>
-              {ready ? `${pk.weekday}, ${formatAnniversaryDate(pk.month, pk.day)}` : ""} · PKT
-              (UTC+5)
+              {ready
+                ? `${pad(parts.days)}:${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`
+                : "--:--:--:--"}
             </p>
           </div>
 

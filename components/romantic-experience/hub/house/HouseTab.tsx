@@ -6,6 +6,7 @@ import { NAMES, PLANT_DURATION_MS, copy } from "@/lib/config";
 import { ROOMS, type RoomId } from "@/lib/house-catalog";
 import { EASE_SOFT } from "@/lib/motion";
 import { useHoldProgress } from "@/hooks/useHoldProgress";
+import { useWeather } from "@/hooks/useWeather";
 import { haptic } from "@/lib/utils";
 import type { HubTab } from "@/types/experience";
 import { useKeepsakes } from "../keepsake-context";
@@ -16,6 +17,7 @@ import { SheetOverlay } from "../ui/SheetOverlay";
 import { HouseExterior } from "./HouseExterior";
 import { HouseInterior } from "./HouseInterior";
 import { HouseEditor } from "./HouseEditor";
+import { WeatherChip } from "./WeatherChip";
 import type { Selection } from "./selection";
 
 interface HouseTabProps {
@@ -30,6 +32,7 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
   const { house, resetHouse } = useHouse();
   const { timeGreeting, nickname, greetingLine, letterWaiting, blooms } =
     useKeepsakes();
+  const weather = useWeather();
 
   const [view, setView] = useState<"outside" | "inside">("outside");
   const [roomId, setRoomId] = useState<RoomId>(ROOMS[0].id);
@@ -84,6 +87,7 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
               onSelect={setSelected}
               onOpenLetters={() => onNavigate("us")}
               onOpenGarden={() => onNavigate("garden")}
+              weather={weather}
             />
           ) : (
             <HouseInterior
@@ -138,7 +142,10 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
           >
             {greetingLine}
           </p>
-          <MonthiversaryBadge />
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <WeatherChip weather={weather} />
+            <MonthiversaryBadge />
+          </div>
         </motion.div>
 
         {/* controls — a small floating cluster above the nav, centred so the

@@ -5,9 +5,11 @@ import { motion, useReducedMotion } from "motion/react";
 import { skyPhase, sunProgress, type SkyPhase } from "@/lib/daily";
 import { DOOR_COLORS, ROOF_COLORS, WALL_COLORS } from "@/lib/house-catalog";
 import type { ExteriorState } from "@/lib/house";
+import type { WeatherState } from "@/lib/weather";
 import { Chimney, Door, Mailbox, Roof, WelcomeSign, Window } from "./parts/structure";
 import { YARD_BOX, YardItem } from "./parts/YardItem";
 import { darken } from "./parts/shade";
+import { WeatherEffects } from "./WeatherEffects";
 import type { Selection } from "./selection";
 
 const SKY: Record<SkyPhase, { top: string; bottom: string; ground: string; groundLip: string; orb: string; glow: string }> = {
@@ -41,6 +43,7 @@ interface HouseExteriorProps {
   onSelect: (s: Selection) => void;
   onOpenLetters: () => void;
   onOpenGarden: () => void;
+  weather: WeatherState | null;
 }
 
 export function HouseExterior({
@@ -53,6 +56,7 @@ export function HouseExterior({
   onSelect,
   onOpenLetters,
   onOpenGarden,
+  weather,
 }: HouseExteriorProps) {
   const reduceMotion = useReducedMotion();
 
@@ -265,6 +269,8 @@ export function HouseExterior({
           </>
         )}
       </svg>
+
+      {weather && <WeatherEffects condition={weather.condition} />}
     </div>
   );
 }
