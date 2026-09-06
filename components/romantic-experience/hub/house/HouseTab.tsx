@@ -104,7 +104,7 @@ export function HouseTab({ onNavigate, onReplayJourney }: HouseTabProps) {
         {view === "inside" && (
           <motion.div
             {...fade(0.22)}
-            className="absolute inset-x-0 top-[calc(env(safe-area-inset-top)+6.75rem)] flex justify-center px-4"
+            className="absolute inset-x-0 top-[calc(env(safe-area-inset-top)+9.5rem)] flex justify-center px-4"
           >
             <div className="flex gap-0.5 rounded-full border border-white/25 bg-black/40 p-1 backdrop-blur-md">
               {ROOMS.map((r) => (
