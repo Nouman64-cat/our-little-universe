@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { copy } from "@/lib/config";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/lib/stars";
 import { haptic } from "@/lib/utils";
 import { StarShape } from "../ui/StarShape";
+import { PaperStrip } from "./PaperStrip";
 
 interface StarComposeProps {
   open: boolean;
@@ -59,12 +60,6 @@ function ComposeCard({
   const [phase, setPhase] = useState<Phase>("write");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const areaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const id = window.setTimeout(() => areaRef.current?.focus(), 120);
-    return () => window.clearTimeout(id);
-  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -126,45 +121,12 @@ function ComposeCard({
             exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.18 } }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="rounded-2xl border border-hairline bg-[#fdf6ec] p-5 text-[#3a2e26] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.6)]">
-              <p className="mb-2 text-center font-display text-sm italic text-[#7c6a5b]">
-                {mode === "new" ? strings.writePrompt : strings.editPrompt}
-              </p>
-
-              <textarea
-                ref={areaRef}
-                value={text}
-                onChange={(e) =>
-                  setText(e.target.value.slice(0, STAR_MAX_LENGTH))
-                }
-                onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                    e.preventDefault();
-                    save();
-                  }
-                }}
-                rows={4}
-                maxLength={STAR_MAX_LENGTH}
-                placeholder={strings.placeholder}
-                disabled={pending}
-                className="w-full resize-none rounded-lg border border-[#e4d7c4] bg-[repeating-linear-gradient(to_bottom,transparent,transparent_27px,#eadfce_27px,#eadfce_28px)] p-3 font-display text-base leading-7 text-[#3a2e26] outline-none placeholder:text-[#b6a690] focus-visible:border-[#d9a6bf] disabled:opacity-60"
-              />
-
-              <div className="mt-1 flex items-center justify-between text-[11px] text-[#9a8977]">
-                <span aria-live="polite" className="text-[#c2557f]">
-                  {error ?? ""}
-                </span>
-                <span>
-                  {text.length}/{STAR_MAX_LENGTH}
-                </span>
-              </div>
-
-              {/* paper colour */}
-              <div className="mt-3">
-                <p className="mb-1.5 text-[11px] uppercase tracking-[0.18em] text-[#9a8977]">
-                  {strings.paper}
+            <div className="overflow-hidden rounded-2xl border border-hairline bg-[#fdf6ec] p-5 text-[#3a2e26] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.6)]">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className="font-display text-sm italic text-[#7c6a5b]">
+                  {mode === "new" ? strings.writePrompt : strings.editPrompt}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-1">
                   {STAR_COLORS.map((c) => {
                     const selected = c === color;
                     return (
@@ -179,20 +141,39 @@ function ComposeCard({
                           setColor(c);
                         }}
                         className={[
-                          "rounded-full p-1 transition-transform",
+                          "rounded-full p-0.5 transition-transform",
                           selected
                             ? "scale-110 ring-2 ring-[#d9a6bf]"
-                            : "opacity-70 hover:opacity-100",
+                            : "opacity-60 hover:opacity-100",
                         ].join(" ")}
                       >
-                        <StarShape className="h-6 w-6" color={c} />
+                        <StarShape className="h-[18px] w-[18px]" color={c} />
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-2">
+              <PaperStrip
+                value={text}
+                onValueChange={(v) => setText(v.slice(0, STAR_MAX_LENGTH))}
+                onSubmit={save}
+                placeholder={strings.placeholder}
+                color={color}
+                maxLength={STAR_MAX_LENGTH}
+                disabled={pending}
+              />
+
+              <div className="mt-2 flex items-center justify-between text-[11px] text-[#9a8977]">
+                <span aria-live="polite" className="text-[#c2557f]">
+                  {error ?? ""}
+                </span>
+                <span>
+                  {text.length}/{STAR_MAX_LENGTH}
+                </span>
+              </div>
+
+              <div className="mt-3 flex gap-2">
                 <button
                   type="button"
                   onClick={onClose}
@@ -216,7 +197,7 @@ function ComposeCard({
               </div>
 
               {mode === "new" && (
-                <p className="mt-2 hidden text-center text-[10px] text-[#b6a690] sm:block">
+                <p className="mt-2 text-center text-[10px] text-[#b6a690]">
                   {strings.submitHint}
                 </p>
               )}
@@ -258,13 +239,13 @@ function FoldCeremony({
       {phase === "folding" && (
         <>
           <motion.div
-            className="absolute flex items-center justify-center overflow-hidden bg-[#fdf6ec] px-2 text-center font-display text-[10px] leading-tight text-[#8a7969] shadow-[0_10px_30px_-8px_rgba(0,0,0,0.5)]"
-            initial={{ width: 210, height: 66, rotate: 0, opacity: 1, borderRadius: 8 }}
+            className="absolute flex items-center justify-center overflow-hidden whitespace-nowrap bg-[#fdf6ec] px-3 text-center font-display text-[11px] italic leading-none text-[#8a7969] shadow-[0_10px_30px_-8px_rgba(0,0,0,0.5)]"
+            initial={{ width: 248, height: 46, rotate: 0, opacity: 1, borderRadius: 4 }}
             animate={{
-              width: [210, 150, 88, 58],
-              height: [66, 58, 66, 58],
+              width: [248, 150, 84, 56],
+              height: [46, 52, 62, 56],
               rotate: [0, -12, 16, 26],
-              borderRadius: [8, 12, 20, 34],
+              borderRadius: [4, 10, 20, 34],
               opacity: [1, 1, 0.65, 0],
             }}
             transition={{
@@ -273,7 +254,7 @@ function FoldCeremony({
               times: [0, 0.35, 0.7, 1],
             }}
           >
-            <span className="line-clamp-3 px-1">{text}</span>
+            <span className="overflow-hidden text-ellipsis px-1">{text}</span>
           </motion.div>
 
           <motion.div

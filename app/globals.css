@@ -100,6 +100,18 @@
   }
 }
 
+/* The blinking pen-tip on the star-writing paper strip (StarCompose). */
+@keyframes olu-caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Safety net for any CSS-driven animation; JS animation honors the same
    preference through motion's useReducedMotion. */
 @media (prefers-reduced-motion: reduce) {
