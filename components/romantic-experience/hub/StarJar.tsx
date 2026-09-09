@@ -8,10 +8,13 @@ import { StarShape } from "../ui/StarShape";
 
 interface StarJarProps {
   stars: Star[];
-  /** The just-added star, which tumbles in from above. */
+  /** The star that just landed — it settles in with a soft glow. */
   freshId: string | null;
   onSelect: (star: Star) => void;
 }
+
+const SHADOW = "drop-shadow(0 3px 6px rgba(0,0,0,0.28))";
+const GLOW = "drop-shadow(0 0 14px rgba(255,158,196,0.9))";
 
 const PER_ROW = 4;
 
@@ -86,21 +89,30 @@ export function StarJar({ stars, freshId, onSelect }: StarJarProps) {
                 left: `${x}%`,
                 bottom: `${y}%`,
                 width: `${w}%`,
-                filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.28))",
               }}
               initial={
                 reduceMotion
-                  ? { opacity: 0, x: "-50%", rotate: rot }
+                  ? { opacity: 0, x: "-50%", rotate: rot, filter: SHADOW }
                   : isFresh
-                    ? { opacity: 0, x: "-50%", y: -260, rotate: rot - 220, scale: 0.9 }
-                    : { opacity: 0, x: "-50%", rotate: rot, scale: 0.7 }
+                    ? { opacity: 0, x: "-50%", y: -34, rotate: rot - 40, scale: 0.7, filter: GLOW }
+                    : { opacity: 0, x: "-50%", rotate: rot, scale: 0.7, filter: SHADOW }
               }
-              animate={{ opacity: 1, x: "-50%", y: 0, rotate: rot, scale: 1 }}
+              animate={{
+                opacity: 1,
+                x: "-50%",
+                y: 0,
+                rotate: rot,
+                scale: 1,
+                filter: isFresh && !reduceMotion ? [GLOW, GLOW, SHADOW] : SHADOW,
+              }}
               transition={
                 reduceMotion
                   ? { duration: 0.2 }
                   : isFresh
-                    ? { type: "spring", stiffness: 150, damping: 15 }
+                    ? {
+                        default: { type: "spring", stiffness: 220, damping: 14 },
+                        filter: { duration: 1.6, times: [0, 0.3, 1], ease: "easeOut" },
+                      }
                     : {
                         type: "spring",
                         stiffness: 260,

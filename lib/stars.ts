@@ -70,3 +70,12 @@ export const STAR_PAPER: Record<StarColor, string> = {
   honey: "var(--color-honey)",
   rose: "var(--color-rose)",
 };
+
+/** Human name for each paper, for the colour picker's labels. */
+export const STAR_COLOR_LABEL: Record<StarColor, string> = {
+  petal: "petal pink",
+  blush: "blush",
+  lavender: "lavender",
+  honey: "honey",
+  rose: "rose",
+};

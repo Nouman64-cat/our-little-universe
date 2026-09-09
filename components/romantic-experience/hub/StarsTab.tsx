@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { copy } from "@/lib/config";
 import { haptic } from "@/lib/utils";
-import type { Star } from "@/lib/stars";
+import type { Star, StarColor } from "@/lib/stars";
 import { StarShape } from "../ui/StarShape";
 import { StarCompose } from "./StarCompose";
 import { StarJar } from "./StarJar";
@@ -17,12 +17,21 @@ type Compose = { mode: "new" } | { mode: "edit"; star: Star } | null;
 /** The star jar: chuchu writes a note, folds it into a paper star, drops it in. */
 export function StarsTab() {
   const reduceMotion = useReducedMotion();
-  const { stars, status, pending, freshId, addStar, editStar, removeStar, reload } =
-    useStars();
+  const {
+    stars,
+    status,
+    freshId,
+    suggestedColor,
+    addStar,
+    commitStar,
+    editStar,
+    removeStar,
+    reload,
+  } = useStars();
 
   const [selected, setSelected] = useState<Star | null>(null);
   const [compose, setCompose] = useState<Compose>(null);
-  const [composeError, setComposeError] = useState<string | null>(null);
+  const [savedStar, setSavedStar] = useState<Star | null>(null);
   const [removing, setRemoving] = useState(false);
 
   const strings = copy.hub.stars;
@@ -30,26 +39,30 @@ export function StarsTab() {
 
   const openNew = () => {
     haptic(6);
-    setComposeError(null);
     setCompose({ mode: "new" });
   };
 
-  const handleSubmit = async (text: string) => {
-    setComposeError(null);
-    if (!compose) return;
+  // Returns success; the compose sheet plays the fold, then calls `handleDone`.
+  const handleSubmit = async (text: string, color: StarColor) => {
+    if (!compose) return false;
     if (compose.mode === "new") {
-      const star = await addStar(text);
-      if (star) setCompose(null);
-      else setComposeError(strings.saveError);
-    } else {
-      const ok = await editStar(compose.star.id, text);
-      if (ok) {
-        setCompose(null);
-        setSelected(null);
-      } else {
-        setComposeError(strings.saveError);
-      }
+      const star = await addStar(text, color);
+      if (!star) return false;
+      setSavedStar(star);
+      return true;
     }
+    const ok = await editStar(compose.star.id, text, color);
+    if (ok) setSelected(null);
+    return ok;
+  };
+
+  const handleDone = () => {
+    if (savedStar) {
+      commitStar(savedStar);
+      setSavedStar(null);
+      haptic([10, 30]);
+    }
+    setCompose(null);
   };
 
   const handleRemove = async (star: Star) => {
@@ -115,7 +128,6 @@ export function StarsTab() {
         removing={removing}
         onClose={() => setSelected(null)}
         onEdit={(star) => {
-          setComposeError(null);
           setSelected(null);
           setCompose({ mode: "edit", star });
         }}
@@ -126,12 +138,14 @@ export function StarsTab() {
         open={compose !== null}
         mode={compose?.mode ?? "new"}
         initialText={compose?.mode === "edit" ? compose.star.text : ""}
-        pending={pending}
-        error={composeError}
+        initialColor={
+          compose?.mode === "edit" ? compose.star.color : suggestedColor
+        }
         onSubmit={handleSubmit}
+        onDone={handleDone}
         onClose={() => {
           setCompose(null);
-          setComposeError(null);
+          setSavedStar(null);
         }}
       />
     </TabScreen>

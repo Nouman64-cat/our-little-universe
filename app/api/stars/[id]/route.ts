@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
-import { rowToStar, sanitizeStarText, type StarRow } from "@/lib/stars";
+import {
+  isStarColor,
+  rowToStar,
+  sanitizeStarText,
+  type StarRow,
+} from "@/lib/stars";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +29,21 @@ export async function PATCH(request: Request, ctx: Ctx) {
     return NextResponse.json({ error: "malformed request" }, { status: 400 });
   }
 
-  const text = sanitizeStarText((body as { text?: unknown }).text);
+  const payload = body as { text?: unknown; color?: unknown };
+  const text = sanitizeStarText(payload.text);
   if (!text) {
     return NextResponse.json({ error: "write something first" }, { status: 400 });
   }
 
+  const patch: { text: string; updated_at: string; color?: string } = {
+    text,
+    updated_at: new Date().toISOString(),
+  };
+  if (isStarColor(payload.color)) patch.color = payload.color;
+
   const { data, error } = await supabase
     .from("stars")
-    .update({ text, updated_at: new Date().toISOString() })
+    .update(patch)
     .eq("id", id)
     .select(COLUMNS)
     .single();

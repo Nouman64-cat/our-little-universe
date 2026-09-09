@@ -143,6 +143,8 @@ export const copy = {
       writePrompt: "what do you want to keep?",
       editPrompt: "rewrite this one",
       placeholder: "a thought, a moment, a tiny thing…",
+      paper: "paper",
+      submitHint: "⌘↵ to fold it in",
       fold: "fold it in ♡",
       save: "save",
       saving: "folding…",

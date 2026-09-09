@@ -6,11 +6,9 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { pickOne } from "@/lib/utils";
 import { STAR_COLORS, type Star, type StarColor } from "@/lib/stars";
 
 type Status = "loading" | "ready" | "error";
@@ -20,12 +18,19 @@ interface StarsValue {
   status: Status;
   /** True while a write is in flight. */
   pending: boolean;
-  /** The most recently added star — the jar animates this one dropping in. */
+  /** The most recently landed star — the jar flashes this one as it settles. */
   freshId: string | null;
-  /** Fold a new star and drop it in. Resolves to the new star, or `null`. */
-  addStar: (text: string) => Promise<Star | null>;
-  /** Rewrite a star. Resolves `true` on success. */
-  editStar: (id: string, text: string) => Promise<boolean>;
+  /** A paper colour to pre-select for the next star, rotating so it varies. */
+  suggestedColor: StarColor;
+  /**
+   * Save a new star. Resolves to the stored star (or `null`) **without** adding
+   * it to the jar — the caller plays the fold-and-drop, then calls `commitStar`.
+   */
+  addStar: (text: string, color: StarColor) => Promise<Star | null>;
+  /** Drop a saved star into the jar once its fold animation has played out. */
+  commitStar: (star: Star) => void;
+  /** Rewrite a star's words and/or paper. Resolves `true` on success. */
+  editStar: (id: string, text: string, color: StarColor) => Promise<boolean>;
   /** Take a star out of the jar, for good. */
   removeStar: (id: string) => Promise<boolean>;
   /** Retry the initial load after an error. */
@@ -33,13 +38,6 @@ interface StarsValue {
 }
 
 const StarsContext = createContext<StarsValue | null>(null);
-
-/** A fresh paper colour for each new star, avoiding an immediate repeat. */
-function nextColor(previous: StarColor | null): StarColor {
-  if (!previous) return pickOne(STAR_COLORS);
-  const others = STAR_COLORS.filter((c) => c !== previous);
-  return pickOne(others);
-}
 
 /**
  * Owns the star jar's contents. Everything goes through `/api/stars`, so the
@@ -52,7 +50,6 @@ export function StarsProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState(false);
   const [freshId, setFreshId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const lastColorRef = useRef<StarColor | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,40 +93,46 @@ export function StarsProvider({ children }: { children: ReactNode }) {
     setReloadKey((k) => k + 1);
   }, []);
 
-  const addStar = useCallback(async (text: string): Promise<Star | null> => {
-    const color = nextColor(lastColorRef.current);
-    setPending(true);
-    try {
-      const res = await fetch("/api/stars", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, color }),
-      });
-      if (!res.ok) return null;
-      const { star } = (await res.json()) as { star: Star };
-      lastColorRef.current = star.color;
-      setStars((current) => [...current, star]);
-      setFreshId(star.id);
-      return star;
-    } catch {
-      return null;
-    } finally {
-      setPending(false);
-    }
+  const addStar = useCallback(
+    async (text: string, color: StarColor): Promise<Star | null> => {
+      setPending(true);
+      try {
+        const res = await fetch("/api/stars", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, color }),
+        });
+        if (!res.ok) return null;
+        const { star } = (await res.json()) as { star: Star };
+        return star;
+      } catch {
+        return null;
+      } finally {
+        setPending(false);
+      }
+    },
+    [],
+  );
+
+  const commitStar = useCallback((star: Star) => {
+    setStars((current) =>
+      current.some((s) => s.id === star.id) ? current : [...current, star],
+    );
+    setFreshId(star.id);
   }, []);
 
   const editStar = useCallback(
-    async (id: string, text: string): Promise<boolean> => {
+    async (id: string, text: string, color: StarColor): Promise<boolean> => {
       const previous = stars;
       setPending(true);
       setStars((current) =>
-        current.map((s) => (s.id === id ? { ...s, text } : s)),
+        current.map((s) => (s.id === id ? { ...s, text, color } : s)),
       );
       try {
         const res = await fetch(`/api/stars/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, color }),
         });
         if (!res.ok) {
           setStars(previous);
@@ -171,18 +174,33 @@ export function StarsProvider({ children }: { children: ReactNode }) {
     [stars, freshId],
   );
 
+  const suggestedColor = STAR_COLORS[stars.length % STAR_COLORS.length];
+
   const value = useMemo<StarsValue>(
     () => ({
       stars,
       status,
       pending,
       freshId,
+      suggestedColor,
       addStar,
+      commitStar,
       editStar,
       removeStar,
       reload,
     }),
-    [stars, status, pending, freshId, addStar, editStar, removeStar, reload],
+    [
+      stars,
+      status,
+      pending,
+      freshId,
+      suggestedColor,
+      addStar,
+      commitStar,
+      editStar,
+      removeStar,
+      reload,
+    ],
   );
 
   return <StarsContext.Provider value={value}>{children}</StarsContext.Provider>;
