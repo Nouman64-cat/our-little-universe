@@ -70,6 +70,18 @@ function TeddyIcon({ active }: IconProps) {
   );
 }
 
+function CastleIcon({ active }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-6 w-6">
+      <path
+        d="M4 20V9l2 1V7l2-1v3l2-1V6h4v2l2 1V6l2 1v3l2-1v11Z"
+        {...paint(active)}
+      />
+      <path d="M10 20v-3a2 2 0 0 1 4 0v3" {...paint(false)} fill="none" />
+    </svg>
+  );
+}
+
 function StarsIcon({ active }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className="h-6 w-6">
@@ -96,6 +108,7 @@ export const NAV_ICONS: Record<HubTab, (props: IconProps) => ReactNode> = {
   sweets: SweetsIcon,
   garden: GardenIcon,
   teddy: TeddyIcon,
+  castle: CastleIcon,
   stars: StarsIcon,
   us: UsIcon,
 };

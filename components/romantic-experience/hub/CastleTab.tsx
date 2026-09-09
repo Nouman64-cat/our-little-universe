@@ -1,0 +1,102 @@
+"use client";
+
+import { motion, useReducedMotion } from "motion/react";
+import { copy } from "@/lib/config";
+import { haptic } from "@/lib/utils";
+import { useAmbientAudio } from "@/hooks/useAmbientAudio";
+import { BallroomScene } from "./BallroomScene";
+import { TabScreen } from "./ui/TabScreen";
+
+/** Path to the looping waltz. Drop the file in `public/` at this name. */
+const MUSIC_SRC = "/castle-waltz.mp3";
+
+function SpeakerIcon({ on }: { on: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+      <path
+        d="M4 9v6h4l5 4V5L8 9H4Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      {on ? (
+        <path
+          d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      ) : (
+        <path
+          d="m17 9 5 6M22 9l-5 6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      )}
+    </svg>
+  );
+}
+
+/** The midnight ball: a castle ballroom scene with a looping waltz. */
+export function CastleTab() {
+  const reduceMotion = useReducedMotion();
+  const { ref, playing, toggle } = useAmbientAudio();
+  const strings = copy.hub.castle;
+
+  return (
+    <TabScreen bare>
+      <div className="relative min-h-dvh w-full overflow-hidden">
+        <BallroomScene />
+
+        <audio ref={ref} src={MUSIC_SRC} loop preload="auto" />
+
+        {/* scrims for the floated chrome */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/35 via-black/12 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-black/45 via-black/16 to-transparent" />
+
+        {/* title */}
+        <motion.div
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+          className="pointer-events-none absolute inset-x-0 top-0 px-6 pt-[calc(env(safe-area-inset-top)+2.75rem)] text-center"
+        >
+          <h1 className="font-display text-2xl font-medium text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.55)]">
+            {strings.title}
+          </h1>
+          <p className="mt-1 font-display text-sm italic text-white/85 [text-shadow:0_2px_12px_rgba(0,0,0,0.6)]">
+            {strings.subtitle}
+          </p>
+        </motion.div>
+
+        {/* music toggle */}
+        <motion.div
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.32 }}
+          className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] flex flex-col items-center gap-2 px-6"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              haptic(6);
+              toggle();
+            }}
+            aria-pressed={playing}
+            className="flex min-h-[48px] items-center gap-2 rounded-full border border-white/25 bg-black/35 px-6 text-sm font-medium text-white/90 backdrop-blur-md transition-colors hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+          >
+            <SpeakerIcon on={playing} />
+            {playing ? strings.musicOn : strings.musicOff}
+          </button>
+          <p className="h-5 text-xs text-white/75 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">
+            {strings.line}
+          </p>
+        </motion.div>
+      </div>
+    </TabScreen>
+  );
+}

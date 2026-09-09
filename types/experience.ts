@@ -23,5 +23,6 @@ export type HubTab =
   | "sweets"
   | "garden"
   | "teddy"
+  | "castle"
   | "stars"
   | "us";

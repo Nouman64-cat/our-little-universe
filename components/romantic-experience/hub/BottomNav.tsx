@@ -17,12 +17,13 @@ const TABS: HubTab[] = [
   "sweets",
   "garden",
   "teddy",
+  "castle",
   "stars",
   "us",
 ];
 
 /**
- * The persistent bottom navigation. Glass bar, seven thumb-sized targets, a
+ * The persistent bottom navigation. Glass bar, eight thumb-sized targets, a
  * single glowing dot that slides to the active tab.
  */
 export function BottomNav({ active, onChange }: BottomNavProps) {

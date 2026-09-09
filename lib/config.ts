@@ -72,6 +72,7 @@ export const copy = {
       sweets: "Sweets",
       garden: "Garden",
       teddy: "Teddy",
+      castle: "Castle",
       stars: "Stars",
       us: "Us",
     },
@@ -132,6 +133,13 @@ export const copy = {
       title: "they waited up",
       hug: "send a hug",
       hugged: (n: number) => `${n} ${n === 1 ? "hug" : "hugs"} sent`,
+    },
+    castle: {
+      title: "the midnight ball",
+      subtitle: "where the twelve princesses dance till dawn",
+      musicOn: "music on",
+      musicOff: "play the music",
+      line: "one dance, and then one more…",
     },
     stars: {
       title: "the star jar",
