@@ -11,10 +11,18 @@ interface BottomNavProps {
   onChange: (tab: HubTab) => void;
 }
 
-const TABS: HubTab[] = ["home", "game", "sweets", "garden", "teddy", "us"];
+const TABS: HubTab[] = [
+  "home",
+  "game",
+  "sweets",
+  "garden",
+  "teddy",
+  "stars",
+  "us",
+];
 
 /**
- * The persistent bottom navigation. Glass bar, five thumb-sized targets, a
+ * The persistent bottom navigation. Glass bar, seven thumb-sized targets, a
  * single glowing dot that slides to the active tab.
  */
 export function BottomNav({ active, onChange }: BottomNavProps) {

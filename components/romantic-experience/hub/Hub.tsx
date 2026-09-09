@@ -9,6 +9,8 @@ import { GardenTab } from "./GardenTab";
 import { HouseProvider } from "./house-context";
 import { HouseTab } from "./house/HouseTab";
 import { HubBackdrop } from "./HubBackdrop";
+import { StarsProvider } from "./stars-context";
+import { StarsTab } from "./StarsTab";
 import { SweetsTab } from "./SweetsTab";
 import { TeddyTab } from "./TeddyTab";
 import { ThemeProvider, ThemeToggle } from "./theme-context";
@@ -37,6 +39,11 @@ export function Hub({ onReplayJourney }: HubProps) {
             {tab === "sweets" && <SweetsTab key="sweets" />}
             {tab === "garden" && <GardenTab key="garden" />}
             {tab === "teddy" && <TeddyTab key="teddy" />}
+            {tab === "stars" && (
+              <StarsProvider key="stars">
+                <StarsTab />
+              </StarsProvider>
+            )}
             {tab === "us" && <UsTab key="us" />}
           </AnimatePresence>
 
