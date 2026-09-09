@@ -110,25 +110,25 @@ export function BallroomScene() {
 
         {/* pillars */}
         {[16, 132, 256, 372].map((x) => (
-          <rect key={x} x={x} y="20" width="12" height="400" fill="#4a3160" />
+          <rect key={x} x={x} y="20" width="12" height="352" fill="#4a3160" />
         ))}
 
         {/* crown moulding */}
-        <rect x="0" y="410" width="400" height="14" fill="#5a3d7a" />
+        <rect x="0" y="372" width="400" height="14" fill="#5a3d7a" />
 
         {/* floor */}
-        <path d="M0 424 H400 V620 H0 Z" fill="url(#ball-floor)" />
+        <path d="M0 386 H400 V620 H0 Z" fill="url(#ball-floor)" />
         {/* perspective lines */}
         {[-160, -80, 40, 120, 200, 280, 360, 480, 560].map((x) => (
           <path
             key={x}
-            d={`M200 424 L${x} 620`}
+            d={`M200 386 L${x} 620`}
             stroke="#ffffff"
             strokeOpacity="0.06"
             strokeWidth="1.5"
           />
         ))}
-        {[452, 492, 545, 610].map((y, i) => (
+        {[416, 464, 528, 604].map((y, i) => (
           <path
             key={y}
             d={`M0 ${y} H400`}
@@ -138,14 +138,14 @@ export function BallroomScene() {
           />
         ))}
         {/* floor sheen */}
-        <ellipse cx="200" cy="470" rx="150" ry="34" fill="url(#ball-glow)" opacity="0.5" />
+        <ellipse cx="200" cy="430" rx="150" ry="34" fill="url(#ball-glow)" opacity="0.5" />
 
         {/* chandeliers (translated so the ceiling mount sits at the origin) */}
         {[
-          { x: 118, drop: 72 },
-          { x: 282, drop: 72 },
+          { x: 118, drop: 64 },
+          { x: 282, drop: 64 },
         ].map((ch, i) => (
-          <g key={i} transform={`translate(${ch.x} 24)`}>
+          <g key={i} transform={`translate(${ch.x} 44)`}>
             <motion.g
               animate={sway ? { rotate: [-1.6, 1.6, -1.6] } : { rotate: 0 }}
               transition={{ duration: 6 + i, repeat: Infinity, ease: "easeInOut" }}
@@ -184,11 +184,10 @@ export function BallroomScene() {
           </g>
         ))}
 
-        {/* other couples, small and dim toward the back of the room */}
+        {/* two dim dancers, far back at the edges */}
         {[
-          { x: 92, y: 484, s: 0.78, dur: 8, span: 38 },
-          { x: 312, y: 474, s: 0.7, dur: 9.5, span: 32 },
-          { x: 214, y: 450, s: 0.56, dur: 11, span: 24 },
+          { x: 60, y: 404, s: 0.4, dur: 9, span: 18 },
+          { x: 340, y: 398, s: 0.36, dur: 10.5, span: 16 },
         ].map((c, i) => (
           <motion.g
             key={i}
@@ -201,7 +200,7 @@ export function BallroomScene() {
             transition={{ duration: c.dur, repeat: Infinity, ease: "easeInOut" }}
           >
             <motion.g
-              style={{ y: c.y, scale: c.s, opacity: 0.7 }}
+              style={{ y: c.y, scale: c.s, opacity: 0.45 }}
               animate={sway ? { rotate: [-4, 4, -4] } : { rotate: 0 }}
               transition={{
                 duration: c.dur / 2,
@@ -209,32 +208,32 @@ export function BallroomScene() {
                 ease: "easeInOut",
               }}
             >
-              <Couple rim={["#ffc7de", "#c1a6ff", "#f0d29b"][i]} />
+              <Couple rim={["#ffc7de", "#c1a6ff"][i]} />
             </motion.g>
           </motion.g>
         ))}
 
         {/* soft vignette */}
         <rect x="0" y="0" width="400" height="620" fill="url(#ball-glow)" opacity="0.06" />
-        <rect x="0" y="470" width="400" height="150" fill="#0d0820" opacity="0.28" />
+        <rect x="0" y="410" width="400" height="210" fill="#0d0820" opacity="0.26" />
 
         {/* the bride and groom, centre stage in a pool of light */}
-        <ellipse cx="200" cy="548" rx="168" ry="104" fill="url(#ball-spot)" />
+        <ellipse cx="200" cy="376" rx="180" ry="150" fill="url(#ball-spot)" />
         <motion.g
           initial={false}
           animate={sway ? { x: [182, 218, 182] } : { x: 200 }}
           transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
         >
-          <ellipse cx="0" cy="594" rx="54" ry="11" fill="#0b0718" opacity="0.45" />
+          <ellipse cx="4" cy="404" rx="64" ry="12" fill="#0b0718" opacity="0.42" />
           <motion.g
             animate={
               sway
-                ? { y: [592, 584, 592], rotate: [-5, 5, -5] }
-                : { y: 592, rotate: -3 }
+                ? { y: [402, 393, 402], rotate: [-5, 5, -5] }
+                : { y: 402, rotate: -3 }
             }
             transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
           >
-            <g transform="scale(2.05)">
+            <g transform="scale(2.15)">
               <BrideGroom />
             </g>
           </motion.g>
@@ -271,47 +270,47 @@ export function BallroomScene() {
 
 /**
  * The bride and groom, feet at y=0, drawn upward, group-local coords. Groom
- * sits around x=-12 in a tailcoat, bride around x=+10 in a flowing gown with a
- * veil; his hand at her waist, her hand at his shoulder, joined hands raised to
- * the left in a waltz frame.
+ * around x=-12, drawn a touch taller and broader-shouldered so he reads as the
+ * larger of the two; bride around x=+5 in a full gown with a veil. His hand at
+ * her waist, her hand on his shoulder, joined hands raised in a waltz frame.
  */
 function BrideGroom() {
   return (
     <g>
       {/* veil, trailing behind the bride */}
       <path
-        d="M12 -74 Q 40 -52 30 -2 Q 24 -34 12 -64 Z"
+        d="M11 -72 Q 38 -50 29 -2 Q 23 -33 11 -60 Z"
         fill="#ffffff"
         opacity="0.28"
       />
       <path
-        d="M12 -74 Q 30 -52 22 -6"
+        d="M11 -72 Q 29 -50 21 -6"
         fill="none"
         stroke="#ffffff"
         strokeOpacity="0.5"
         strokeWidth="1"
       />
 
-      {/* ---- groom ---- */}
+      {/* ---- groom (a little taller, broader) ---- */}
       {/* tails */}
-      <path d="M-19 -34 L-21 -3 L-13 -34 Z" fill="#141029" />
-      <path d="M-5 -34 L-3 -3 L-11 -34 Z" fill="#141029" />
+      <path d="M-19 -35 L-21 -3 L-13 -35 Z" fill="#141029" />
+      <path d="M-5 -35 L-3 -3 L-11 -35 Z" fill="#141029" />
       {/* legs + shoes */}
-      <rect x="-18" y="-33" width="5" height="33" fill="#17122b" />
-      <rect x="-11" y="-33" width="5" height="33" fill="#17122b" />
-      <rect x="-19.5" y="-3" width="8" height="4" rx="1.5" fill="#0b0818" />
-      <rect x="-11.5" y="-3" width="8" height="4" rx="1.5" fill="#0b0818" />
-      {/* coat */}
-      <path d="M-21 -33 L-22 -57 Q-12 -63 -2 -57 L-3 -33 Z" fill="#1d1836" />
+      <rect x="-18" y="-34" width="5.5" height="34" fill="#17122b" />
+      <rect x="-11" y="-34" width="5.5" height="34" fill="#17122b" />
+      <rect x="-19.5" y="-3" width="8" height="4.2" rx="1.5" fill="#0b0818" />
+      <rect x="-11.5" y="-3" width="8" height="4.2" rx="1.5" fill="#0b0818" />
+      {/* coat, broad shoulders */}
+      <path d="M-21 -34 L-23 -61 Q-12 -69 -1 -61 L-3 -34 Z" fill="#1d1836" />
       {/* shirt + bow tie */}
-      <path d="M-15.5 -57 L-12 -39 L-8.5 -57 Z" fill="#efe9dc" />
-      <path d="M-12 -55 L-16 -58 L-16 -52 Z" fill="#0c0a1a" />
-      <path d="M-12 -55 L-8 -58 L-8 -52 Z" fill="#0c0a1a" />
+      <path d="M-15 -61 L-12 -42 L-9 -61 Z" fill="#efe9dc" />
+      <path d="M-12 -59 L-15.8 -61.5 L-15.8 -56.5 Z" fill="#0c0a1a" />
+      <path d="M-12 -59 L-8.2 -61.5 L-8.2 -56.5 Z" fill="#0c0a1a" />
       {/* neck + head + hair */}
-      <rect x="-14" y="-61" width="4" height="5" fill="#e7c6a4" />
-      <circle cx="-12" cy="-67" r="6" fill="#e7c6a4" />
+      <rect x="-13.8" y="-65" width="3.8" height="5" fill="#e7c6a4" />
+      <circle cx="-12" cy="-70.5" r="6.2" fill="#e7c6a4" />
       <path
-        d="M-18 -67 Q-18.5 -75 -12 -75 Q-5.5 -75 -6 -67 Q-9 -71 -12 -71 Q-15 -71 -18 -67 Z"
+        d="M-18.2 -70.5 Q-18.6 -78 -12 -78 Q-5.4 -78 -5.8 -70.5 Q-8.6 -74.5 -12 -74.5 Q-15.4 -74.5 -18.2 -70.5 Z"
         fill="#26160f"
       />
       {/* his right arm around the bride's waist */}
@@ -319,22 +318,22 @@ function BrideGroom() {
         d="M-3 -49 Q 7 -45 15 -47"
         fill="none"
         stroke="#1d1836"
-        strokeWidth="4.5"
+        strokeWidth="4.6"
         strokeLinecap="round"
       />
       {/* his left forearm, up to the joined hands */}
       <path
-        d="M-19 -55 L-24 -64"
+        d="M-19 -55 L-24 -65"
         fill="none"
         stroke="#1d1836"
-        strokeWidth="4.5"
+        strokeWidth="4.6"
         strokeLinecap="round"
       />
 
-      {/* ---- bride ---- */}
+      {/* ---- bride (a touch shorter, slimmer profile) ---- */}
       {/* gown with a sweeping train to the right */}
       <path
-        d="M2 1 C -12 -2 -11 -30 -3 -52 L10 -52 C 20 -30 34 4 8 1 Z"
+        d="M2 1 C -12 -2 -11 -30 -3 -52 L10 -52 C 19 -30 31 4 8 1 Z"
         fill="#f7f0e2"
       />
       <path
@@ -352,30 +351,23 @@ function BrideGroom() {
       />
       {/* bodice */}
       <path d="M-1 -52 L0 -64 Q4 -66 8 -64 L9 -52 Z" fill="#f2ebdb" />
-      {/* bouquet at her side */}
-      <g transform="translate(-4 -34)">
-        <circle r="2.6" fill="#ffc7de" />
-        <circle cx="3" cy="1" r="2" fill="#ffd9e6" />
-        <circle cx="-1.5" cy="2.4" r="1.8" fill="#f6d2e2" />
-        <path d="M0 2 L1 9" stroke="#8fb89c" strokeWidth="1.2" />
-      </g>
       {/* neck + head + updo + tiara */}
-      <rect x="2" y="-67" width="4" height="4" fill="#e7c6a4" />
-      <circle cx="4" cy="-72" r="5.5" fill="#e7c6a4" />
+      <rect x="2" y="-62" width="4" height="4" fill="#e7c6a4" />
+      <circle cx="4" cy="-66.5" r="5.2" fill="#e7c6a4" />
       <path
-        d="M-1.5 -72 Q-2 -80 4 -80 Q10 -80 9.5 -72 Q7 -76 4 -76 Q1 -76 -1.5 -72 Z"
+        d="M-1.2 -66.5 Q-1.8 -74 4 -74 Q9.8 -74 9.2 -66.5 Q6.6 -70.2 4 -70.2 Q1.4 -70.2 -1.2 -66.5 Z"
         fill="#3a2617"
       />
-      <circle cx="9" cy="-75" r="2.6" fill="#3a2617" />
+      <circle cx="8.8" cy="-69" r="2.4" fill="#3a2617" />
       <path
-        d="M0 -79 l1.6 -3 l1.6 3 l1.6 -3 l1.6 3"
+        d="M0.4 -73 l1.5 -2.8 l1.5 2.8 l1.5 -2.8 l1.5 2.8"
         fill="none"
         stroke="#ffe6a6"
         strokeWidth="1.2"
       />
       {/* her left hand resting on his shoulder */}
       <path
-        d="M2 -55 Q -7 -58 -14 -56"
+        d="M2 -56 Q -6 -60 -13 -58"
         fill="none"
         stroke="#f2ebdb"
         strokeWidth="3.6"
@@ -383,18 +375,18 @@ function BrideGroom() {
       />
       {/* her right forearm crossing up to meet his hand */}
       <path
-        d="M5 -55 Q -9 -56 -22 -64"
+        d="M5 -55 Q -8 -57 -21 -63"
         fill="none"
         stroke="#f2ebdb"
         strokeWidth="3.4"
         strokeLinecap="round"
       />
       {/* their joined hands */}
-      <ellipse cx="-24" cy="-65" rx="2.8" ry="3.6" fill="#e7c6a4" />
+      <ellipse cx="-23" cy="-64" rx="2.9" ry="3.7" fill="#e7c6a4" />
 
       {/* a small heart floating above them */}
       <path
-        d="M-2 -98 c 0 -2 -3.4 -2 -3.4 0.7 c 0 2 3.4 4.1 3.4 4.1 c 0 0 3.4 -2.1 3.4 -4.1 c 0 -2.7 -3.4 -2.7 -3.4 -0.7 Z"
+        d="M-2 -92 c 0 -2 -3.4 -2 -3.4 0.7 c 0 2 3.4 4.1 3.4 4.1 c 0 0 3.4 -2.1 3.4 -4.1 c 0 -2.7 -3.4 -2.7 -3.4 -0.7 Z"
         fill="#ffb3d0"
         opacity="0.7"
       />

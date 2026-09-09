@@ -56,7 +56,7 @@ export function CastleTab() {
 
         {/* scrims for the floated chrome */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/35 via-black/12 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-black/45 via-black/16 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/40 via-black/12 to-transparent" />
 
         {/* title */}
         <motion.div
@@ -73,29 +73,32 @@ export function CastleTab() {
           </p>
         </motion.div>
 
-        {/* music toggle */}
-        <motion.div
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.32 }}
-          className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] flex flex-col items-center gap-2 px-6"
+        {/* music toggle — a small collapsed control, top-left */}
+        <motion.button
+          type="button"
+          onClick={() => {
+            haptic(6);
+            toggle();
+          }}
+          aria-pressed={playing}
+          aria-label={playing ? strings.musicOn : strings.musicOff}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="absolute left-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white/90 backdrop-blur-md transition-colors hover:bg-black/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
         >
-          <button
-            type="button"
-            onClick={() => {
-              haptic(6);
-              toggle();
-            }}
-            aria-pressed={playing}
-            className="flex min-h-[48px] items-center gap-2 rounded-full border border-white/25 bg-black/35 px-6 text-sm font-medium text-white/90 backdrop-blur-md transition-colors hover:bg-black/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
-          >
-            <SpeakerIcon on={playing} />
-            {playing ? strings.musicOn : strings.musicOff}
-          </button>
-          <p className="h-5 text-xs text-white/75 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">
-            {strings.line}
-          </p>
-        </motion.div>
+          <SpeakerIcon on={playing} />
+        </motion.button>
+
+        {/* the line, small at the foot */}
+        <motion.p
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
+          className="pointer-events-none absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] px-6 text-center font-display text-sm italic text-white/75 [text-shadow:0_1px_8px_rgba(0,0,0,0.65)]"
+        >
+          {strings.line}
+        </motion.p>
       </div>
     </TabScreen>
   );
