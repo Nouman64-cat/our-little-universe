@@ -81,9 +81,30 @@ export function StarsTab() {
 
   return (
     <TabScreen title={strings.title} subtitle={strings.subtitle}>
-      <p className="mb-4 text-sm text-ink-faint" suppressHydrationWarning>
-        {status === "error" ? strings.offline : countLine}
-      </p>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-ink-faint" suppressHydrationWarning>
+          {status === "error" ? strings.offline : countLine}
+        </p>
+        {status !== "error" && (
+          <button
+            type="button"
+            onClick={openNew}
+            disabled={status === "loading"}
+            aria-label={strings.write}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-rose/40 bg-rose/15 text-rose backdrop-blur-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 disabled:opacity-40"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+              <path
+                d="M12 5v14M5 12h14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
+      </div>
 
       <div className="my-auto">
         {status === "error" ? (
@@ -106,20 +127,6 @@ export function StarsTab() {
           >
             <StarJar stars={stars} freshId={freshId} onSelect={setSelected} />
           </motion.div>
-        )}
-
-        {status !== "error" && (
-          <div className="mt-6 flex justify-center">
-            <button
-              type="button"
-              onClick={openNew}
-              disabled={status === "loading"}
-              className="flex h-12 items-center gap-2 rounded-full border border-rose/40 bg-rose/15 px-6 text-sm font-medium text-rose backdrop-blur-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 disabled:opacity-40"
-            >
-              <StarShape className="h-5 w-5" color="rose" />
-              {strings.write}
-            </button>
-          </div>
         )}
       </div>
 

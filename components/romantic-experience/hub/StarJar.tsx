@@ -16,7 +16,7 @@ interface StarJarProps {
 const SHADOW = "drop-shadow(0 3px 6px rgba(0,0,0,0.28))";
 const GLOW = "drop-shadow(0 0 14px rgba(255,158,196,0.9))";
 
-const PER_ROW = 4;
+const PER_ROW = 5;
 
 interface Placed {
   star: Star;
@@ -30,19 +30,19 @@ interface Placed {
 /** Pile the stars up from the bottom of the jar, tighter as more collect. */
 function pileUp(stars: Star[]): { placed: Placed[]; w: number } {
   const rows = Math.max(1, Math.ceil(stars.length / PER_ROW));
-  const rowGap = Math.min(19, 74 / rows);
-  const w = clamp(rowGap * 1.25, 12, 24);
+  const rowGap = Math.min(15, 76 / rows);
+  const w = clamp(rowGap * 0.95, 8, 13);
 
   const placed = stars.map((star, i) => {
     const row = Math.floor(i / PER_ROW);
     const col = i % PER_ROW;
-    const brick = row % 2 === 0 ? 0 : 10.5;
+    const brick = row % 2 === 0 ? 0 : 9;
     const h = hashString(star.id);
-    const jitterX = (h % 9) - 4;
+    const jitterX = (h % 7) - 3;
     const jitterY = ((h >> 4) % 7) - 3;
     return {
       star,
-      x: clamp(13 + col * 21 + brick + jitterX, 8, 92),
+      x: clamp(9 + col * 18 + brick + jitterX, 5, 92),
       y: 4 + row * rowGap + jitterY,
       w,
       rot: ((h >> 8) % 42) - 21,
@@ -66,10 +66,25 @@ export function StarJar({ stars, freshId, onSelect }: StarJarProps) {
         <div className="absolute right-6 top-6 h-16 w-1.5 rounded-full bg-white/15" />
       </div>
 
-      {/* lid */}
-      <div className="absolute inset-x-7 top-0 z-20">
-        <div className="relative h-7 rounded-full border border-hairline-strong bg-surface-2 backdrop-blur-md">
-          <div className="absolute left-1/2 top-1/2 h-1.5 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink-faint/40" />
+      {/* wooden lid */}
+      <div className="absolute inset-x-6 top-0 z-20">
+        <div
+          className="relative h-7 overflow-hidden rounded-full border border-[#5e3f26] shadow-[0_3px_8px_-2px_rgba(0,0,0,0.45)]"
+          style={{
+            background:
+              "linear-gradient(180deg, #b07d47 0%, #935e31 45%, #74471f 100%)",
+          }}
+        >
+          {/* grain */}
+          <div
+            className="absolute inset-0 opacity-40 mix-blend-overlay"
+            style={{
+              background:
+                "repeating-linear-gradient(90deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 7px)",
+            }}
+          />
+          <div className="absolute inset-x-0 top-0 h-px bg-white/25" />
+          <div className="absolute left-1/2 top-1/2 h-1.5 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5c3a1f]/70" />
         </div>
       </div>
 
