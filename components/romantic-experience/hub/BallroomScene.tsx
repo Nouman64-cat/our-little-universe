@@ -1,19 +1,110 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import { useTheme } from "./theme-context";
 
 /**
- * The midnight ball — a castle ballroom seen from the floor: three tall arched
- * windows onto a moonlit night, gold chandeliers, a mirror-bright floor, and a
- * few couples waltzing in silhouette. A fixed illustration palette (doesn't
- * follow the hub theme), all motion stilled under `prefers-reduced-motion`.
+ * The castle ball — a ballroom seen from the floor: three tall arched windows,
+ * gold chandeliers, a mirror-bright floor, and couples waltzing in silhouette.
+ * The illustration follows the hub theme: a moonlit *midnight* ball in dark, a
+ * sunlit *morning* ball in light. All motion stilled under
+ * `prefers-reduced-motion`.
  */
+
+interface Palette {
+  /** Solid behind the SVG, in case it letterboxes. */
+  shell: string;
+  /** Sky through the windows, top → horizon. */
+  sky: [string, string, string];
+  /** Back wall, top → bottom. */
+  wall: [string, string];
+  /** Ballroom floor, front → back. */
+  floor: [string, string, string];
+  /** Warm bloom around the lights. */
+  glow: string;
+  /** The moon (dark) or sun (light) disc. */
+  orb: [string, string];
+  /** The centre-stage spotlight. */
+  spot: [string, string];
+  mullion: string;
+  arch: string;
+  pillar: string;
+  moulding: string;
+  /** Night stars — hidden by day. */
+  star: string;
+  starOpacity: number;
+  /** Perspective lines on the floor. */
+  line: string;
+  lineOpacity: number;
+  cord: string;
+  fitting: string;
+  flame: string;
+  /** Corner darkening at the foot of the room. */
+  vignette: string;
+  vignetteOpacity: number;
+  /** Drifting ♪ / ♫. */
+  note: string;
+}
+
+const DARK: Palette = {
+  shell: "#140d29",
+  sky: ["#0f0b24", "#241a48", "#3a2a5e"],
+  wall: ["#2a1c44", "#3d2a5c"],
+  floor: ["#4a3568", "#2c1e44", "#191029"],
+  glow: "#ffd98a",
+  orb: ["#fdf6e3", "#e7d8b6"],
+  spot: ["#fff1cf", "#ffe8b8"],
+  mullion: "#6a4a86",
+  arch: "#5a3d7a",
+  pillar: "#4a3160",
+  moulding: "#5a3d7a",
+  star: "#fdf6e3",
+  starOpacity: 1,
+  line: "#ffffff",
+  lineOpacity: 1,
+  cord: "#7a5a2e",
+  fitting: "#f0d29b",
+  flame: "#ffe6a6",
+  vignette: "#0d0820",
+  vignetteOpacity: 0.26,
+  note: "rgba(255,230,166,0.7)",
+};
+
+const LIGHT: Palette = {
+  shell: "#e9eef6",
+  sky: ["#a9d0ef", "#d4e8f7", "#f3e7d0"],
+  wall: ["#f4e9d3", "#e7d6b6"],
+  floor: ["#dcbf9c", "#c6a079", "#a67f58"],
+  glow: "#ffe6ad",
+  orb: ["#fff8dc", "#ffe6a0"],
+  spot: ["#fff6dc", "#ffeec4"],
+  mullion: "#b89b73",
+  arch: "#a5865c",
+  pillar: "#cbb890",
+  moulding: "#bb9d71",
+  star: "#ffffff",
+  starOpacity: 0,
+  line: "#7c5a3a",
+  lineOpacity: 0.5,
+  cord: "#8a6636",
+  fitting: "#c99a4a",
+  flame: "#ffcf6b",
+  vignette: "#7a5c3c",
+  vignetteOpacity: 0.14,
+  note: "rgba(180,120,40,0.7)",
+};
+
 export function BallroomScene() {
   const reduceMotion = useReducedMotion();
+  const { theme } = useTheme();
+  const p = theme === "light" ? LIGHT : DARK;
   const sway = !reduceMotion;
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#140d29]">
+    <div
+      className="absolute inset-0 overflow-hidden transition-colors duration-500"
+      style={{ backgroundColor: p.shell }}
+    >
       <svg
         viewBox="0 0 400 620"
         preserveAspectRatio="xMidYMax slice"
@@ -21,31 +112,31 @@ export function BallroomScene() {
       >
         <defs>
           <linearGradient id="ball-sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0f0b24" />
-            <stop offset="60%" stopColor="#241a48" />
-            <stop offset="100%" stopColor="#3a2a5e" />
+            <stop offset="0%" stopColor={p.sky[0]} />
+            <stop offset="60%" stopColor={p.sky[1]} />
+            <stop offset="100%" stopColor={p.sky[2]} />
           </linearGradient>
           <linearGradient id="ball-wall" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2a1c44" />
-            <stop offset="100%" stopColor="#3d2a5c" />
+            <stop offset="0%" stopColor={p.wall[0]} />
+            <stop offset="100%" stopColor={p.wall[1]} />
           </linearGradient>
           <linearGradient id="ball-floor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4a3568" />
-            <stop offset="45%" stopColor="#2c1e44" />
-            <stop offset="100%" stopColor="#191029" />
+            <stop offset="0%" stopColor={p.floor[0]} />
+            <stop offset="45%" stopColor={p.floor[1]} />
+            <stop offset="100%" stopColor={p.floor[2]} />
           </linearGradient>
           <radialGradient id="ball-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ffd98a" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#ffd98a" stopOpacity="0" />
+            <stop offset="0%" stopColor={p.glow} stopOpacity="0.5" />
+            <stop offset="100%" stopColor={p.glow} stopOpacity="0" />
           </radialGradient>
           <radialGradient id="ball-moon" cx="40%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#fdf6e3" />
-            <stop offset="100%" stopColor="#e7d8b6" />
+            <stop offset="0%" stopColor={p.orb[0]} />
+            <stop offset="100%" stopColor={p.orb[1]} />
           </radialGradient>
           <radialGradient id="ball-spot" cx="50%" cy="38%" r="62%">
-            <stop offset="0%" stopColor="#fff1cf" stopOpacity="0.9" />
-            <stop offset="55%" stopColor="#ffe8b8" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#ffe8b8" stopOpacity="0" />
+            <stop offset="0%" stopColor={p.spot[0]} stopOpacity="0.9" />
+            <stop offset="55%" stopColor={p.spot[1]} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={p.spot[1]} stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -76,32 +167,33 @@ export function BallroomScene() {
                   fill="url(#ball-moon)"
                 />
               )}
-              {[0.2, 0.5, 0.35, 0.7].map((fx, s) => (
-                <circle
-                  key={s}
-                  cx={win.x + win.w * fx}
-                  cy={springY + 8 + s * 34}
-                  r={s % 2 ? 1.4 : 1}
-                  fill="#fdf6e3"
-                  opacity={0.85}
-                />
-              ))}
+              {p.starOpacity > 0 &&
+                [0.2, 0.5, 0.35, 0.7].map((fx, s) => (
+                  <circle
+                    key={s}
+                    cx={win.x + win.w * fx}
+                    cy={springY + 8 + s * 34}
+                    r={s % 2 ? 1.4 : 1}
+                    fill={p.star}
+                    opacity={0.85 * p.starOpacity}
+                  />
+                ))}
               {/* mullions */}
               <path
                 d={`M${win.x + r} ${springY} V${botY}`}
-                stroke="#6a4a86"
+                stroke={p.mullion}
                 strokeWidth="4"
               />
               <path
                 d={`M${win.x} ${topY + win.h * 0.55} H${win.x + win.w}`}
-                stroke="#6a4a86"
+                stroke={p.mullion}
                 strokeWidth="4"
               />
               {/* arch frame */}
               <path
                 d={`M${win.x - 4} ${botY} L${win.x - 4} ${springY} A${r + 4} ${r + 4} 0 0 1 ${win.x + win.w + 4} ${springY} L${win.x + win.w + 4} ${botY}`}
                 fill="none"
-                stroke="#5a3d7a"
+                stroke={p.arch}
                 strokeWidth="7"
               />
             </g>
@@ -110,11 +202,11 @@ export function BallroomScene() {
 
         {/* pillars */}
         {[16, 132, 256, 372].map((x) => (
-          <rect key={x} x={x} y="20" width="12" height="352" fill="#4a3160" />
+          <rect key={x} x={x} y="20" width="12" height="352" fill={p.pillar} />
         ))}
 
         {/* crown moulding */}
-        <rect x="0" y="372" width="400" height="14" fill="#5a3d7a" />
+        <rect x="0" y="372" width="400" height="14" fill={p.moulding} />
 
         {/* floor */}
         <path d="M0 386 H400 V620 H0 Z" fill="url(#ball-floor)" />
@@ -123,8 +215,8 @@ export function BallroomScene() {
           <path
             key={x}
             d={`M200 386 L${x} 620`}
-            stroke="#ffffff"
-            strokeOpacity="0.06"
+            stroke={p.line}
+            strokeOpacity={0.06 * p.lineOpacity}
             strokeWidth="1.5"
           />
         ))}
@@ -132,8 +224,8 @@ export function BallroomScene() {
           <path
             key={y}
             d={`M0 ${y} H400`}
-            stroke="#ffffff"
-            strokeOpacity={0.07 - i * 0.012}
+            stroke={p.line}
+            strokeOpacity={(0.07 - i * 0.012) * p.lineOpacity}
             strokeWidth="1.5"
           />
         ))}
@@ -150,24 +242,24 @@ export function BallroomScene() {
               animate={sway ? { rotate: [-1.6, 1.6, -1.6] } : { rotate: 0 }}
               transition={{ duration: 6 + i, repeat: Infinity, ease: "easeInOut" }}
             >
-              <path d={`M0 0 V${ch.drop}`} stroke="#7a5a2e" strokeWidth="2" />
+              <path d={`M0 0 V${ch.drop}`} stroke={p.cord} strokeWidth="2" />
               <ellipse
                 cx="0"
                 cy={ch.drop}
                 rx="34"
                 ry="9"
                 fill="none"
-                stroke="#f0d29b"
+                stroke={p.fitting}
                 strokeWidth="3"
               />
               {[-30, -15, 0, 15, 30].map((dx) => (
                 <g key={dx}>
-                  <path d={`M${dx} ${ch.drop} v10`} stroke="#f0d29b" strokeWidth="2" />
+                  <path d={`M${dx} ${ch.drop} v10`} stroke={p.fitting} strokeWidth="2" />
                   <motion.circle
                     cx={dx}
                     cy={ch.drop + 13}
                     r="3.4"
-                    fill="#ffe6a6"
+                    fill={p.flame}
                     animate={
                       sway ? { opacity: [0.6, 1, 0.7], r: [3, 3.8, 3.2] } : undefined
                     }
@@ -215,7 +307,14 @@ export function BallroomScene() {
 
         {/* soft vignette */}
         <rect x="0" y="0" width="400" height="620" fill="url(#ball-glow)" opacity="0.06" />
-        <rect x="0" y="410" width="400" height="210" fill="#0d0820" opacity="0.26" />
+        <rect
+          x="0"
+          y="410"
+          width="400"
+          height="210"
+          fill={p.vignette}
+          opacity={p.vignetteOpacity}
+        />
 
         {/* the bride and groom, centre stage in a pool of light */}
         <ellipse cx="200" cy="376" rx="180" ry="150" fill="url(#ball-spot)" />
@@ -250,8 +349,8 @@ export function BallroomScene() {
         ].map((n, i) => (
           <motion.span
             key={i}
-            className="pointer-events-none absolute bottom-[34%] text-[#ffe6a6]/70"
-            style={{ left: n.left }}
+            className="pointer-events-none absolute bottom-[34%]"
+            style={{ left: n.left, color: p.note }}
             initial={{ y: 0, opacity: 0 }}
             animate={{ y: -220, opacity: [0, 0.9, 0] }}
             transition={{
