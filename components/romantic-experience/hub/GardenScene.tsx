@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, type MouseEvent } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { EASE_SOFT } from "@/lib/motion";
+import { clamp } from "@/lib/utils";
+import { usePanZoom } from "@/hooks/usePanZoom";
 import { hashString, skyPhase, sunProgress, type SkyPhase } from "@/lib/daily";
+import { FLOWER_LABEL } from "@/lib/flowers";
 import { FlowerArt } from "../flowers";
 import type { LilyTone } from "../lily-shape";
 import type { GardenLily } from "./keepsake-context";
@@ -175,8 +178,12 @@ function Flower({
   return (
     <motion.button
       type="button"
-      onClick={onOpen}
-      aria-label={`Lily from ${bloom.label}`}
+      // pointer taps are routed through the scene's pan-zoom tap handler;
+      // this only needs to answer keyboard activation (detail 0)
+      onClick={(event) => {
+        if (event.detail === 0) onOpen();
+      }}
+      aria-label={`${FLOWER_LABEL[bloom.species]} from ${bloom.label}`}
       className="group relative flex shrink-0 flex-col items-center rounded-xl px-0.5 pt-1 pb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
       style={{ transformOrigin: "bottom center", rotate: `${lean}deg` }}
       initial={
@@ -247,16 +254,46 @@ export function GardenScene({
   onPlant,
 }: GardenSceneProps) {
   const reduceMotion = useReducedMotion();
+  const bedRef = useRef<HTMLButtonElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
-  const handleBedClick = (event: MouseEvent<HTMLButtonElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const clamp = (v: number, lo: number, hi: number) =>
-      Math.min(hi, Math.max(lo, v));
-    const x = clamp((event.clientX - rect.left) / rect.width, 0.05, 0.95);
-    // top of the bed reads as the back of the border, bottom as the front
-    const y = clamp((event.clientY - rect.top) / rect.height, 0.06, 0.96);
-    onPlant(x, y);
-  };
+  /** Turn a spot in the bed (client coords) into a normalised plant position. */
+  const plantAt = useCallback(
+    (clientX: number, clientY: number) => {
+      const rect = bedRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const x = clamp((clientX - rect.left) / rect.width, 0.05, 0.95);
+      // top of the bed reads as the back of the border, bottom as the front
+      const y = clamp((clientY - rect.top) / rect.height, 0.06, 0.96);
+      onPlant(x, y);
+    },
+    [onPlant],
+  );
+
+  /**
+   * A tap that landed on a flower opens its note; anywhere else on the bed
+   * plants one. `getBoundingClientRect` already accounts for the pan-zoom
+   * transform, so this stays accurate at any zoom.
+   */
+  const handleTap = useCallback(
+    (clientX: number, clientY: number) => {
+      const hit = document
+        .elementFromPoint(clientX, clientY)
+        ?.closest<HTMLElement>("[data-flower-id]");
+      if (hit) {
+        const bloom = blooms.find((b) => b.id === hit.dataset.flowerId);
+        if (bloom) onOpen(bloom);
+        return;
+      }
+      plantAt(clientX, clientY);
+    },
+    [blooms, onOpen, plantAt],
+  );
+
+  const { scale, viewportProps, worldStyle, zoomBy, reset } = usePanZoom(
+    viewportRef,
+    { minScale: 1, maxScale: 4, anchorY: 0.3, onTap: handleTap },
+  );
 
   const { phase, scene, sun } = useMemo(() => {
     const now = new Date();
@@ -275,7 +312,13 @@ export function GardenScene({
   const isNight = phase === "night";
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <>
+    <div
+      ref={viewportRef}
+      {...viewportProps}
+      className="absolute inset-0 touch-none select-none overflow-hidden"
+    >
+    <div className="absolute inset-0 origin-center" style={worldStyle}>
       {/* sky */}
       <div className="absolute inset-0" style={{ background: scene.sky }} />
 
@@ -368,11 +411,16 @@ export function GardenScene({
           {/* shrubs along the back of the bed */}
           <Bushes light={scene.bladeLight} dark={scene.bush} />
 
-          {/* tap an empty patch of grass to plant a flower right there */}
+          {/* the plantable bed — pointer taps run through the scene's tap
+              handler; this answers keyboard activation and is the rect that
+              plant positions are measured against */}
           <button
+            ref={bedRef}
             type="button"
             aria-label={plantLabel}
-            onClick={handleBedClick}
+            onClick={(event) => {
+              if (event.detail === 0) onPlant(0.5, 0.55);
+            }}
             className="absolute inset-0 z-0 rounded-[45%/22%] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/50"
           />
 
@@ -382,6 +430,7 @@ export function GardenScene({
             return (
               <div
                 key={bloom.id}
+                data-flower-id={bloom.id}
                 className="absolute"
                 style={{
                   left: `${6 + bloom.x * 88}%`,
@@ -417,6 +466,63 @@ export function GardenScene({
           )}
         </div>
       </div>
+    </div>
+    </div>
+
+    <ZoomControls
+      scale={scale}
+      onZoomIn={() => zoomBy(1.6)}
+      onZoomOut={() => zoomBy(1 / 1.6)}
+      onReset={reset}
+    />
+    </>
+  );
+}
+
+/** ＋ / − / reset stack, floated top-left over the scene (outside the zoom world). */
+function ZoomControls({
+  scale,
+  onZoomIn,
+  onZoomOut,
+  onReset,
+}: {
+  scale: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onReset: () => void;
+}) {
+  const btn =
+    "flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/40 text-lg leading-none text-white/90 backdrop-blur-md transition hover:bg-black/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60 disabled:opacity-35";
+  return (
+    <div className="absolute left-3 top-[calc(env(safe-area-inset-top)+1rem)] z-40 flex flex-col items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onZoomIn}
+        disabled={scale >= 3.99}
+        aria-label="Zoom in"
+        className={btn}
+      >
+        +
+      </button>
+      <button
+        type="button"
+        onClick={onZoomOut}
+        disabled={scale <= 1.01}
+        aria-label="Zoom out"
+        className={btn}
+      >
+        −
+      </button>
+      {scale > 1.01 && (
+        <button
+          type="button"
+          onClick={onReset}
+          aria-label="Reset zoom"
+          className={`${btn} text-[10px] uppercase tracking-wide`}
+        >
+          1×
+        </button>
+      )}
     </div>
   );
 }
