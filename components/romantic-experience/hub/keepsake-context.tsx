@@ -19,6 +19,7 @@ import {
   todayKey,
 } from "@/lib/daily";
 import { LETTERS, type Letter } from "@/lib/keepsakes";
+import type { FlowerSpecies } from "@/lib/flowers";
 import {
   applyDailyVisit,
   loadState,
@@ -28,11 +29,12 @@ import {
 } from "@/lib/storage";
 import { pickOne, sample } from "@/lib/utils";
 
-/** A garden lily with its note and a human date resolved. */
+/** A garden flower with its note, species and a human date resolved. */
 export interface GardenLily extends GardenBloom {
   id: string;
   note: string;
   label: string;
+  species: FlowerSpecies;
 }
 
 interface KeepsakeValue {
@@ -58,7 +60,8 @@ interface KeepsakeValue {
 
   blooms: GardenLily[];
   streak: number;
-  plantLily: () => void;
+  /** Plant an extra flower of the given species, dated today. */
+  plantFlower: (species: FlowerSpecies) => void;
 
   hugsSent: number;
   sendHug: () => void;
@@ -134,12 +137,18 @@ export function KeepsakeProvider({
     );
   }, []);
 
-  const plantLily = useCallback(() => {
-    setState((current) => ({
-      ...current,
-      gardenBlooms: [...current.gardenBlooms, { date: today, kind: "planted" }],
-    }));
-  }, [today]);
+  const plantFlower = useCallback(
+    (species: FlowerSpecies) => {
+      setState((current) => ({
+        ...current,
+        gardenBlooms: [
+          ...current.gardenBlooms,
+          { date: today, kind: "planted", species },
+        ],
+      }));
+    },
+    [today],
+  );
 
   const sendHug = useCallback(() => {
     setState((current) => ({ ...current, hugsSent: current.hugsSent + 1 }));
@@ -201,6 +210,7 @@ export function KeepsakeProvider({
           id,
           note: pickByKey(content.lilies, id),
           label: formatMonthDay(bloom.date),
+          species: bloom.species ?? "lily",
         };
       }),
     [state.gardenBlooms, content.lilies],
@@ -233,7 +243,7 @@ export function KeepsakeProvider({
       refillJar,
       blooms,
       streak: state.streak,
-      plantLily,
+      plantFlower,
       hugsSent: state.hugsSent,
       sendHug,
       randomTeddyLine,
@@ -269,7 +279,7 @@ export function KeepsakeProvider({
       blooms,
       takeSweetOfDay,
       randomSweet,
-      plantLily,
+      plantFlower,
       sendHug,
       randomTeddyLine,
       recordGame,

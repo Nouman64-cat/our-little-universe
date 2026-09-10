@@ -125,7 +125,8 @@ export const copy = {
     garden: {
       title: (name: string) => `${name}'s garden`,
       subtitle: "a lily for every day you visit",
-      plant: "plant one",
+      pick: "pick a flower to plant",
+      plant: (flower: string) => `plant a ${flower}`,
       planting: "hold…",
       empty: "come back tomorrow and watch it fill in",
     },

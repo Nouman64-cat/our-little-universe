@@ -1,9 +1,12 @@
 import { daysBetween, todayKey } from "./daily";
+import { isFlowerSpecies, type FlowerSpecies } from "./flowers";
 
-/** One garden lily — either the automatic daily bloom or one she planted. */
+/** One garden flower — either the automatic daily bloom or one she planted. */
 export interface GardenBloom {
   date: string;
   kind: "daily" | "planted";
+  /** What she planted. Absent on the daily bloom and on pre-existing data → a lily. */
+  species?: FlowerSpecies;
 }
 
 /**
@@ -56,7 +59,12 @@ export function loadState(): OluState {
     return {
       ...DEFAULT_STATE,
       ...parsed,
-      gardenBlooms: Array.isArray(parsed.gardenBlooms) ? parsed.gardenBlooms : [],
+      gardenBlooms: Array.isArray(parsed.gardenBlooms)
+        ? parsed.gardenBlooms.map((bloom) => ({
+            ...bloom,
+            species: isFlowerSpecies(bloom?.species) ? bloom.species : undefined,
+          }))
+        : [],
       openedSweetDays: Array.isArray(parsed.openedSweetDays)
         ? parsed.openedSweetDays
         : [],

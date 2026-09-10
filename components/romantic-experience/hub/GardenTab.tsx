@@ -7,7 +7,8 @@ import { EASE_SOFT } from "@/lib/motion";
 import { todayKey } from "@/lib/daily";
 import { haptic } from "@/lib/utils";
 import { useHoldProgress } from "@/hooks/useHoldProgress";
-import { LilyBloom } from "../LilyBloom";
+import { FLOWER_LABEL, FLOWER_SPECIES, type FlowerSpecies } from "@/lib/flowers";
+import { FlowerArt } from "../flowers";
 import { GardenScene } from "./GardenScene";
 import { useKeepsakes, type GardenLily } from "./keepsake-context";
 import { NoteOverlay } from "./ui/NoteOverlay";
@@ -27,11 +28,62 @@ function Sprout({ className }: { className?: string }) {
   );
 }
 
+/**
+ * The press-and-hold soil-fill button. Its own component so remounting it (via
+ * a changing `key`) resets the one-shot hold hook after each flower is planted.
+ */
+function PlantControl({
+  species,
+  reduceMotion,
+  onPlant,
+}: {
+  species: FlowerSpecies;
+  reduceMotion: boolean;
+  onPlant: () => void;
+}) {
+  const { progress, isHolding, handlers } = useHoldProgress({
+    durationMs: PLANT_DURATION_MS,
+    onComplete: () => {
+      haptic([10, 30]);
+      onPlant();
+    },
+  });
+
+  return (
+    <button
+      type="button"
+      {...handlers}
+      aria-label={`Press and hold to plant a ${FLOWER_LABEL[species]}`}
+      className="relative flex h-14 w-52 touch-none items-center justify-center gap-2 overflow-hidden rounded-full border border-white/30 bg-black/35 text-sm font-medium text-white/90 backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+    >
+      <span
+        aria-hidden
+        className="absolute inset-x-0 bottom-0"
+        style={{
+          height: `${progress * 100}%`,
+          background:
+            "linear-gradient(to top, color-mix(in srgb, var(--color-leaf) 55%, transparent), color-mix(in srgb, var(--color-leaf) 20%, transparent))",
+          transition: reduceMotion ? undefined : "height 0.09s linear",
+        }}
+      />
+      <Sprout className="relative h-5 w-5 text-leaf" />
+      <span className="relative">
+        {isHolding
+          ? copy.hub.garden.planting
+          : copy.hub.garden.plant(FLOWER_LABEL[species])}
+      </span>
+    </button>
+  );
+}
+
 /** The garden: a scenic sky and a grassy bank the lilies grow from. */
 export function GardenTab() {
-  const { nickname, blooms, streak, plantLily } = useKeepsakes();
+  const { nickname, blooms, streak, plantFlower } = useKeepsakes();
   const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState<GardenLily | null>(null);
+  const [species, setSpecies] = useState<FlowerSpecies>("lily");
+  // Bumped after each plant so <PlantControl> remounts and the hold hook resets.
+  const [plantKey, setPlantKey] = useState(0);
 
   // The most recent bloom, if it opened today, gets the full grow-and-bloom.
   const today = todayKey();
@@ -40,13 +92,10 @@ export function GardenTab() {
       ? blooms[blooms.length - 1].id
       : null;
 
-  const { progress, isHolding, handlers } = useHoldProgress({
-    durationMs: PLANT_DURATION_MS,
-    onComplete: () => {
-      haptic([10, 30]);
-      plantLily();
-    },
-  });
+  const handlePlant = () => {
+    plantFlower(species);
+    setPlantKey((key) => key + 1);
+  };
 
   return (
     <TabScreen bare>
@@ -75,7 +124,7 @@ export function GardenTab() {
           </p>
           <div className="mt-3 flex items-center justify-center gap-2 text-xs">
             <span className="rounded-full border border-white/25 bg-black/30 px-3 py-1 text-white/90 backdrop-blur-sm">
-              {blooms.length} {blooms.length === 1 ? "lily" : "lilies"}
+              {blooms.length} {blooms.length === 1 ? "flower" : "flowers"}
             </span>
             {streak > 1 && (
               <span className="rounded-full border border-rose/40 bg-rose/25 px-3 py-1 text-white backdrop-blur-sm">
@@ -85,36 +134,53 @@ export function GardenTab() {
           </div>
         </motion.div>
 
-        {/* plant control — hold and the soil fills */}
-        <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] flex justify-center px-6">
-          <button
-            type="button"
-            {...handlers}
-            aria-label="Press and hold to plant a lily"
-            className="relative flex h-14 w-48 touch-none items-center justify-center gap-2 overflow-hidden rounded-full border border-white/30 bg-black/35 text-sm font-medium text-white/90 backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
-          >
-            <span
-              aria-hidden
-              className="absolute inset-x-0 bottom-0"
-              style={{
-                height: `${progress * 100}%`,
-                background:
-                  "linear-gradient(to top, color-mix(in srgb, var(--color-leaf) 55%, transparent), color-mix(in srgb, var(--color-leaf) 20%, transparent))",
-                transition: reduceMotion ? undefined : "height 0.09s linear",
-              }}
-            />
-            <Sprout className="relative h-5 w-5 text-leaf" />
-            <span className="relative">
-              {isHolding ? copy.hub.garden.planting : copy.hub.garden.plant}
-            </span>
-          </button>
-        </div>
+        {/* flower picker + press-and-hold plant control */}
+        <motion.div
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE_SOFT, delay: 0.25 }}
+          className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4rem)] flex flex-col items-center gap-2.5 px-6"
+        >
+          <p className="text-[11px] uppercase tracking-[0.2em] text-white/60 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)]">
+            {copy.hub.garden.pick}
+          </p>
+          <div className="flex items-center justify-center gap-1.5">
+            {FLOWER_SPECIES.map((s) => {
+              const active = s === species;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => {
+                    haptic(4);
+                    setSpecies(s);
+                  }}
+                  aria-pressed={active}
+                  aria-label={FLOWER_LABEL[s]}
+                  className={`flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition ${
+                    active
+                      ? "scale-110 border-rose/70 bg-rose/25"
+                      : "border-white/20 bg-black/30 hover:bg-black/45"
+                  }`}
+                >
+                  <FlowerArt species={s} className="h-7 w-7" />
+                </button>
+              );
+            })}
+          </div>
+          <PlantControl
+            key={plantKey}
+            species={species}
+            reduceMotion={!!reduceMotion}
+            onPlant={handlePlant}
+          />
+        </motion.div>
       </div>
 
       <NoteOverlay
         open={selected !== null}
         onClose={() => setSelected(null)}
-        label="A lily's note"
+        label="A flower's note"
       >
         {selected && (
           <div className="rounded-3xl border border-hairline bg-canvas-raised/95 p-7 text-center shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">
@@ -124,10 +190,11 @@ export function GardenTab() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: EASE_SOFT }}
             >
-              <LilyBloom className="h-full w-full" />
+              <FlowerArt species={selected.species} className="h-full w-full" />
             </motion.div>
             <p className="mb-1 text-xs uppercase tracking-[0.25em] text-ink-faint">
-              {selected.kind === "planted" ? "planted" : "bloomed"} · {selected.label}
+              {selected.kind === "planted" ? "planted" : "bloomed"} ·{" "}
+              {FLOWER_LABEL[selected.species]} · {selected.label}
             </p>
             <p className="font-display text-lg leading-relaxed text-ink">
               {selected.note}

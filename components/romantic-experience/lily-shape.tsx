@@ -33,23 +33,23 @@ export const petalPath = (index: number) =>
 export const midribPath = (index: number) =>
   isInnerPetal(index) ? MIDRIB_INNER : MIDRIB_OUTER;
 
-export const petalOpacity = (index: number) => (isInnerPetal(index) ? 0.97 : 0.82);
+export const petalOpacity = (index: number) => (isInnerPetal(index) ? 1 : 0.9);
 
 export type LilyTone = "blush" | "white";
 
 const GRADIENT_STOPS: Record<LilyTone, [number, string][]> = {
   blush: [
-    [0, "#ffffff"],
-    [30, "#fcdcea"],
-    [62, "#f295c0"],
-    [88, "#e0609f"],
-    [100, "#cf3f86"],
+    [0, "#fff2f8"],
+    [26, "#fbc9e0"],
+    [58, "#ef82b6"],
+    [85, "#dd4f92"],
+    [100, "#c8317c"],
   ],
   white: [
     [0, "#ffffff"],
-    [45, "#fdf6ef"],
-    [80, "#f2e7d3"],
-    [100, "#e4d0ac"],
+    [42, "#fbf1e6"],
+    [78, "#efdcc0"],
+    [100, "#dcc39a"],
   ],
 };
 
@@ -109,9 +109,9 @@ export function LilyPetal({
         strokeLinecap="round"
       />
       {spots.length > 0 && (
-        <g fill="#a52c50">
+        <g fill="#9c2549">
           {spots.map((s, i) => (
-            <ellipse key={i} cx={s.x} cy={s.y} rx={s.r} ry={s.r * 1.15} opacity={0.72} />
+            <ellipse key={i} cx={s.x} cy={s.y} rx={s.r * 1.15} ry={s.r * 1.3} opacity={0.85} />
           ))}
         </g>
       )}

@@ -4,8 +4,7 @@ import { useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { EASE_SOFT } from "@/lib/motion";
 import { hashString, skyPhase, sunProgress, type SkyPhase } from "@/lib/daily";
-import { LilyBloom } from "../LilyBloom";
-import { LilyIcon } from "../ui/LilyIcon";
+import { FlowerArt } from "../flowers";
 import type { LilyTone } from "../lily-shape";
 import type { GardenLily } from "./keepsake-context";
 
@@ -167,10 +166,11 @@ function Flower({
   shadow: string;
   onOpen: () => void;
 }) {
-  const stemHeight = 34 + (hashString(bloom.id) % 34);
-  const size = 44 + (hashString(`${bloom.id}s`) % 18);
+  const stemHeight = 32 + (hashString(bloom.id) % 30);
+  const size = 40 + (hashString(`${bloom.id}s`) % 16);
   const lean = (hashString(`${bloom.id}l`) % 9) - 4;
-  const tone: LilyTone = hashString(`${bloom.id}t`) % 3 === 0 ? "white" : "blush";
+  // lily only — the others carry their own colour
+  const tone: LilyTone = hashString(`${bloom.id}t`) % 4 === 0 ? "white" : "blush";
 
   return (
     <motion.button
@@ -199,11 +199,12 @@ function Flower({
           ease: "easeInOut",
         }}
       >
-        {fresh ? (
-          <LilyBloom className="h-full w-full" tone={tone} />
-        ) : (
-          <LilyIcon className="h-full w-full" tone={tone} />
-        )}
+        <FlowerArt
+          species={bloom.species}
+          className="h-full w-full"
+          fresh={fresh}
+          tone={tone}
+        />
       </motion.span>
 
       <Stem height={stemHeight} fresh={fresh} reduceMotion={reduceMotion} />
@@ -330,39 +331,45 @@ export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneP
         ))}
       </div>
 
-      {/* ground — anchored to the bottom, grows upward as more lilies fill it */}
+      {/* ground — anchored to the bottom; the bed sits just above the controls
+          and extra rows of flowers stack upward from there */}
       <div
-        className="absolute inset-x-0 bottom-0 rounded-t-[50%/46px] px-4 pt-10 pb-[calc(env(safe-area-inset-bottom)+8.5rem)]"
+        className="absolute inset-x-0 bottom-0 flex flex-col justify-end rounded-t-[50%/46px] px-4 pt-10 pb-[calc(env(safe-area-inset-bottom)+11.5rem)]"
         style={{
           background: scene.grass,
           boxShadow: `inset 0 3px 0 ${scene.grassLip}, 0 -14px 34px -12px rgba(0,0,0,0.28)`,
-          minHeight: "52%",
+          minHeight: "54%",
         }}
       >
         {/* shrubs along the back of the bed */}
         <Bushes light={scene.bladeLight} dark={scene.bush} />
 
         {blooms.length > 0 ? (
-          <div className="mx-auto flex max-w-md flex-wrap items-end justify-center gap-x-2 gap-y-3">
-            {blooms.map((bloom) => (
-              <Flower
-                key={bloom.id}
-                bloom={bloom}
-                fresh={bloom.id === freshId}
-                reduceMotion={!!reduceMotion}
-                shadow={scene.shadow}
-                onOpen={() => onOpen(bloom)}
-              />
-            ))}
+          <div className="relative mx-auto max-w-md">
+            <div className="flex flex-wrap items-end justify-center gap-x-1 gap-y-2">
+              {blooms.map((bloom) => (
+                <Flower
+                  key={bloom.id}
+                  bloom={bloom}
+                  fresh={bloom.id === freshId}
+                  reduceMotion={!!reduceMotion}
+                  shadow={scene.shadow}
+                  onOpen={() => onOpen(bloom)}
+                />
+              ))}
+            </div>
+            {/* grass tufting up around the stems */}
+            <GrassFringe
+              light={scene.bladeLight}
+              dark={scene.bladeDark}
+              reduceMotion={!!reduceMotion}
+            />
           </div>
         ) : (
           <p className="py-6 text-center text-sm text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
             {emptyLine}
           </p>
         )}
-
-        {/* foreground grass fringe */}
-        <GrassFringe light={scene.bladeLight} dark={scene.bladeDark} reduceMotion={!!reduceMotion} />
       </div>
     </div>
   );
@@ -423,7 +430,7 @@ function GrassFringe({
   return (
     <motion.div
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+      className="pointer-events-none absolute inset-x-0 -bottom-3 h-20"
       animate={reduceMotion ? undefined : { skewX: [-1.1, 1.1, -1.1] }}
       transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       style={{ transformOrigin: "bottom center" }}
