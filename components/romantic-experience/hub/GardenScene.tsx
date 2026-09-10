@@ -6,12 +6,26 @@ import { EASE_SOFT } from "@/lib/motion";
 import { hashString, skyPhase, sunProgress, type SkyPhase } from "@/lib/daily";
 import { LilyBloom } from "../LilyBloom";
 import { LilyIcon } from "../ui/LilyIcon";
+import type { LilyTone } from "../lily-shape";
 import type { GardenLily } from "./keepsake-context";
 
 /** Sky / ground palette per time of day. */
 const SCENERY: Record<
   SkyPhase,
-  { sky: string; grass: string; grassLip: string; orb: string; orbGlow: string; cloud: string }
+  {
+    sky: string;
+    grass: string;
+    grassLip: string;
+    orb: string;
+    orbGlow: string;
+    cloud: string;
+    /** Foreground grass-blade fringe + background shrubs. */
+    bladeLight: string;
+    bladeDark: string;
+    bush: string;
+    /** Contact shadow the flowers cast on the bed. */
+    shadow: string;
+  }
 > = {
   dawn: {
     sky: "linear-gradient(180deg, #f7cba8 0%, #edb9d0 44%, #c3d7ea 100%)",
@@ -20,6 +34,10 @@ const SCENERY: Record<
     orb: "#fff1d6",
     orbGlow: "rgba(255, 214, 160, 0.75)",
     cloud: "rgba(255,255,255,0.82)",
+    bladeLight: "#6fb974",
+    bladeDark: "#4a8f57",
+    bush: "#4f9a5f",
+    shadow: "rgba(40, 70, 45, 0.28)",
   },
   day: {
     sky: "linear-gradient(180deg, #8ec7ea 0%, #bfe1f1 52%, #e9f5fb 100%)",
@@ -28,6 +46,10 @@ const SCENERY: Record<
     orb: "#fff7e4",
     orbGlow: "rgba(255, 233, 178, 0.85)",
     cloud: "rgba(255,255,255,0.9)",
+    bladeLight: "#63bd6d",
+    bladeDark: "#3f9a52",
+    bush: "#48ab5b",
+    shadow: "rgba(35, 65, 40, 0.26)",
   },
   dusk: {
     sky: "linear-gradient(180deg, #f4a978 0%, #dd83a7 38%, #7f6aa8 74%, #4b4374 100%)",
@@ -36,6 +58,10 @@ const SCENERY: Record<
     orb: "#ffe0b0",
     orbGlow: "rgba(255, 176, 120, 0.7)",
     cloud: "rgba(255,255,255,0.5)",
+    bladeLight: "#5b8a63",
+    bladeDark: "#3c6547",
+    bush: "#456f4d",
+    shadow: "rgba(20, 35, 25, 0.34)",
   },
   night: {
     sky: "linear-gradient(180deg, #131a3d 0%, #23224f 55%, #322f5e 100%)",
@@ -44,6 +70,10 @@ const SCENERY: Record<
     orb: "#eef0ff",
     orbGlow: "rgba(200, 208, 255, 0.55)",
     cloud: "rgba(210,214,240,0.14)",
+    bladeLight: "#3a5c44",
+    bladeDark: "#233b2e",
+    bush: "#2a4636",
+    shadow: "rgba(0, 0, 0, 0.32)",
   },
 };
 
@@ -73,28 +103,81 @@ const STARS = [
   { x: "17%", y: "31%", r: 1, delay: 2.6 },
 ] as const;
 
-/** One lily on a stem, rooted in the grass. */
+/** A leafed lily stem, grown from the bed. Group-local, base at y = height. */
+function Stem({
+  height,
+  fresh,
+  reduceMotion,
+}: {
+  height: number;
+  fresh: boolean;
+  reduceMotion: boolean;
+}) {
+  const leaves = useMemo(() => {
+    const out: { y: number; side: 1 | -1; len: number }[] = [];
+    for (let y = height * 0.34, i = 0; y < height * 0.92; y += 12, i += 1) {
+      out.push({ y, side: i % 2 === 0 ? 1 : -1, len: 15 + ((i * 7) % 7) });
+    }
+    return out;
+  }, [height]);
+
+  return (
+    <motion.svg
+      width={46}
+      height={height}
+      viewBox={`-23 0 46 ${height}`}
+      className="overflow-visible"
+      style={{ transformOrigin: "bottom center" }}
+      initial={reduceMotion || !fresh ? false : { scaleY: 0 }}
+      animate={{ scaleY: 1 }}
+      transition={{ duration: 0.7, ease: EASE_SOFT }}
+      aria-hidden
+    >
+      <path
+        d={`M0,${height} C -2.5,${height * 0.62} 2.5,${height * 0.3} 0,0`}
+        fill="none"
+        stroke="var(--color-leaf)"
+        strokeWidth={2.6}
+        strokeLinecap="round"
+      />
+      {leaves.map((leaf, i) => (
+        <path
+          key={i}
+          d="M0,0 C 8,-6 19,-7 28,-1 C 19,4 8,4 0,0 Z"
+          fill="var(--color-leaf)"
+          opacity={i % 2 === 0 ? 0.92 : 0.72}
+          transform={`translate(0 ${height - leaf.y}) scale(${leaf.side} 1) rotate(-24) scale(${leaf.len / 22})`}
+        />
+      ))}
+    </motion.svg>
+  );
+}
+
+/** One lily on a leafed stem, rooted in the grass. */
 function Flower({
   bloom,
   fresh,
   reduceMotion,
+  shadow,
   onOpen,
 }: {
   bloom: GardenLily;
   fresh: boolean;
   reduceMotion: boolean;
+  shadow: string;
   onOpen: () => void;
 }) {
-  const stemHeight = 30 + (hashString(bloom.id) % 30);
-  const size = 40 + (hashString(`${bloom.id}s`) % 16);
+  const stemHeight = 34 + (hashString(bloom.id) % 34);
+  const size = 44 + (hashString(`${bloom.id}s`) % 18);
   const lean = (hashString(`${bloom.id}l`) % 9) - 4;
+  const tone: LilyTone = hashString(`${bloom.id}t`) % 3 === 0 ? "white" : "blush";
 
   return (
     <motion.button
       type="button"
       onClick={onOpen}
       aria-label={`Lily from ${bloom.label}`}
-      className="group flex shrink-0 flex-col items-center rounded-xl px-0.5 pt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+      className="group relative flex shrink-0 flex-col items-center rounded-xl px-0.5 pt-1 pb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
       style={{ transformOrigin: "bottom center", rotate: `${lean}deg` }}
       initial={
         reduceMotion || !fresh
@@ -105,7 +188,7 @@ function Flower({
       transition={{ duration: fresh ? 1 : 0.4, ease: EASE_SOFT }}
     >
       <motion.span
-        className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.18)]"
+        className="drop-shadow-[0_5px_10px_rgba(0,0,0,0.22)]"
         style={{ width: size, height: size }}
         animate={
           reduceMotion ? undefined : { rotate: [-1.3, 1.6, -1.3], y: [0, -1.5, 0] }
@@ -117,21 +200,19 @@ function Flower({
         }}
       >
         {fresh ? (
-          <LilyBloom className="h-full w-full" />
+          <LilyBloom className="h-full w-full" tone={tone} />
         ) : (
-          <LilyIcon className="h-full w-full" />
+          <LilyIcon className="h-full w-full" tone={tone} />
         )}
       </motion.span>
-      <motion.span
-        className="w-[3px] rounded-full"
-        style={{
-          height: stemHeight,
-          background: "linear-gradient(to top, #4d7d5f, var(--color-leaf))",
-          transformOrigin: "bottom center",
-        }}
-        initial={reduceMotion || !fresh ? false : { scaleY: 0 }}
-        animate={{ scaleY: 1 }}
-        transition={{ duration: 0.7, ease: EASE_SOFT }}
+
+      <Stem height={stemHeight} fresh={fresh} reduceMotion={reduceMotion} />
+
+      {/* contact shadow on the bed */}
+      <span
+        aria-hidden
+        className="absolute bottom-1.5 rounded-[50%] blur-[3px]"
+        style={{ width: size * 0.62, height: 6, background: shadow }}
       />
     </motion.button>
   );
@@ -146,8 +227,9 @@ interface GardenSceneProps {
 
 /**
  * The garden itself: a sky that shifts with the actual time of day, a drifting
- * sun or moon, slow clouds, and a grassy bank the lilies grow out of. Every
- * animation drops to a still frame when motion is reduced.
+ * sun or moon, slow clouds, background shrubs, a grassy bank the lilies grow
+ * out of, and a fringe of grass blades across the foreground. Every animation
+ * drops to a still frame when motion is reduced.
  */
 export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneProps) {
   const reduceMotion = useReducedMotion();
@@ -257,14 +339,18 @@ export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneP
           minHeight: "52%",
         }}
       >
+        {/* shrubs along the back of the bed */}
+        <Bushes light={scene.bladeLight} dark={scene.bush} />
+
         {blooms.length > 0 ? (
-          <div className="mx-auto flex max-w-md flex-wrap items-end justify-center gap-x-1.5 gap-y-3">
+          <div className="mx-auto flex max-w-md flex-wrap items-end justify-center gap-x-2 gap-y-3">
             {blooms.map((bloom) => (
               <Flower
                 key={bloom.id}
                 bloom={bloom}
                 fresh={bloom.id === freshId}
                 reduceMotion={!!reduceMotion}
+                shadow={scene.shadow}
                 onOpen={() => onOpen(bloom)}
               />
             ))}
@@ -274,8 +360,91 @@ export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneP
             {emptyLine}
           </p>
         )}
+
+        {/* foreground grass fringe */}
+        <GrassFringe light={scene.bladeLight} dark={scene.bladeDark} reduceMotion={!!reduceMotion} />
       </div>
     </div>
+  );
+}
+
+/** Rounded shrub silhouettes sitting on the back edge of the bed. */
+function Bushes({ light, dark }: { light: string; dark: string }) {
+  const items = [
+    { left: "7%", w: 132, h: 48 },
+    { left: "35%", w: 92, h: 36 },
+    { left: "63%", w: 156, h: 54 },
+    { left: "88%", w: 112, h: 42 },
+  ];
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 -translate-y-[38%]">
+      {items.map((b, i) => (
+        <svg
+          key={i}
+          width={b.w}
+          height={b.h}
+          viewBox="0 0 100 40"
+          preserveAspectRatio="none"
+          className="absolute bottom-0"
+          style={{ left: b.left, transform: "translateX(-50%)" }}
+          aria-hidden
+        >
+          <ellipse cx="28" cy="30" rx="26" ry="17" fill={dark} />
+          <ellipse cx="55" cy="23" rx="30" ry="21" fill={dark} />
+          <ellipse cx="76" cy="30" rx="22" ry="15" fill={light} opacity={0.85} />
+          <ellipse cx="44" cy="27" rx="20" ry="14" fill={light} opacity={0.45} />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+/** A fringe of grass blades across the very front of the scene. */
+function GrassFringe({
+  light,
+  dark,
+  reduceMotion,
+}: {
+  light: string;
+  dark: string;
+  reduceMotion: boolean;
+}) {
+  const blades = useMemo(
+    () =>
+      Array.from({ length: 130 }, (_, i) => {
+        const x = (i / 129) * 400 + (((i * 37) % 9) - 4);
+        const h = 20 + ((i * 53) % 34);
+        const lean = (((i * 29) % 16) - 8) * 0.9;
+        return { x, h, lean, dark: i % 3 === 0 };
+      }),
+    [],
+  );
+
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+      animate={reduceMotion ? undefined : { skewX: [-1.1, 1.1, -1.1] }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      style={{ transformOrigin: "bottom center" }}
+    >
+      <svg
+        viewBox="0 0 400 64"
+        preserveAspectRatio="none"
+        className="absolute bottom-0 h-full w-full"
+      >
+        {blades.map((b, i) => (
+          <path
+            key={i}
+            d={`M${b.x},64 C ${b.x + b.lean},${64 - b.h * 0.55} ${b.x + b.lean * 1.6},${64 - b.h * 0.85} ${b.x + b.lean * 2},${64 - b.h}`}
+            fill="none"
+            stroke={b.dark ? dark : light}
+            strokeWidth={b.dark ? 2.4 : 1.8}
+            strokeLinecap="round"
+          />
+        ))}
+      </svg>
+    </motion.div>
   );
 }
 
