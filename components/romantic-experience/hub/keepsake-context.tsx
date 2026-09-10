@@ -15,6 +15,7 @@ import {
   daysBetween,
   formatMonthDay,
   greetingPrefix,
+  hashString,
   pickByKey,
   todayKey,
 } from "@/lib/daily";
@@ -29,12 +30,15 @@ import {
 } from "@/lib/storage";
 import { pickOne, sample } from "@/lib/utils";
 
-/** A garden flower with its note, species and a human date resolved. */
+/** A garden flower with its note, species, human date and bed position resolved. */
 export interface GardenLily extends GardenBloom {
   id: string;
   note: string;
   label: string;
   species: FlowerSpecies;
+  /** Resolved bed position, each 0–1 (`x` left→right, `y` back→front). */
+  x: number;
+  y: number;
 }
 
 interface KeepsakeValue {
@@ -60,8 +64,11 @@ interface KeepsakeValue {
 
   blooms: GardenLily[];
   streak: number;
-  /** Plant an extra flower of the given species, dated today. */
-  plantFlower: (species: FlowerSpecies) => void;
+  /**
+   * Plant an extra flower of the given species, dated today, at the spot she
+   * tapped in the bed (`x`/`y` each 0–1, left→right / back→front).
+   */
+  plantFlower: (species: FlowerSpecies, x: number, y: number) => void;
 
   hugsSent: number;
   sendHug: () => void;
@@ -138,12 +145,13 @@ export function KeepsakeProvider({
   }, []);
 
   const plantFlower = useCallback(
-    (species: FlowerSpecies) => {
+    (species: FlowerSpecies, x: number, y: number) => {
+      const clamp = (v: number) => Math.min(1, Math.max(0, v));
       setState((current) => ({
         ...current,
         gardenBlooms: [
           ...current.gardenBlooms,
-          { date: today, kind: "planted", species },
+          { date: today, kind: "planted", species, x: clamp(x), y: clamp(y) },
         ],
       }));
     },
@@ -205,12 +213,17 @@ export function KeepsakeProvider({
     () =>
       state.gardenBlooms.map((bloom, index) => {
         const id = `${bloom.date}-${bloom.kind}-${index}`;
+        // Blooms she placed carry their own spot; the rest scatter from their id.
+        const x = bloom.x ?? (hashString(`${id}x`) % 1000) / 1000;
+        const y = bloom.y ?? (hashString(`${id}y`) % 1000) / 1000;
         return {
           ...bloom,
           id,
           note: pickByKey(content.lilies, id),
           label: formatMonthDay(bloom.date),
           species: bloom.species ?? "lily",
+          x,
+          y,
         };
       }),
     [state.gardenBlooms, content.lilies],

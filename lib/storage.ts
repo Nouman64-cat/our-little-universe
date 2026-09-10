@@ -7,6 +7,20 @@ export interface GardenBloom {
   kind: "daily" | "planted";
   /** What she planted. Absent on the daily bloom and on pre-existing data → a lily. */
   species?: FlowerSpecies;
+  /**
+   * Where it sits in the bed, each 0–1 (`x` left→right, `y` back→front). Set
+   * when she taps a spot to plant; absent on the daily bloom and older data,
+   * which get a stable scattered position derived from the flower's id.
+   */
+  x?: number;
+  y?: number;
+}
+
+/** A finite number clamped to 0–1, or `undefined` for anything else. */
+function unitOrUndefined(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.min(1, Math.max(0, value))
+    : undefined;
 }
 
 /**
@@ -63,6 +77,8 @@ export function loadState(): OluState {
         ? parsed.gardenBlooms.map((bloom) => ({
             ...bloom,
             species: isFlowerSpecies(bloom?.species) ? bloom.species : undefined,
+            x: unitOrUndefined(bloom?.x),
+            y: unitOrUndefined(bloom?.y),
           }))
         : [],
       openedSweetDays: Array.isArray(parsed.openedSweetDays)

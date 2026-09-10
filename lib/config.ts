@@ -125,10 +125,10 @@ export const copy = {
     garden: {
       title: (name: string) => `${name}'s garden`,
       subtitle: "a lily for every day you visit",
-      pick: "pick a flower to plant",
+      pick: "pick a flower, then tap the garden",
       plant: (flower: string) => `plant a ${flower}`,
-      planting: "hold…",
-      empty: "come back tomorrow and watch it fill in",
+      tap: (flower: string) => `tap a patch of grass to plant a ${flower}`,
+      empty: "tap the grass to plant your first flower",
     },
     teddy: {
       title: "they waited up",

@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { PLANT_DURATION_MS, copy } from "@/lib/config";
+import { copy } from "@/lib/config";
 import { EASE_SOFT } from "@/lib/motion";
 import { todayKey } from "@/lib/daily";
 import { haptic } from "@/lib/utils";
-import { useHoldProgress } from "@/hooks/useHoldProgress";
 import { FLOWER_LABEL, FLOWER_SPECIES, type FlowerSpecies } from "@/lib/flowers";
 import { FlowerArt } from "../flowers";
 import { GardenScene } from "./GardenScene";
@@ -14,76 +13,12 @@ import { useKeepsakes, type GardenLily } from "./keepsake-context";
 import { NoteOverlay } from "./ui/NoteOverlay";
 import { TabScreen } from "./ui/TabScreen";
 
-/** A sprig glyph for the plant button. */
-function Sprout({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path d="M12 21v-8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <path
-        d="M12 14c-1-3-4-4-6-4 0 3 2 5 6 5Zm0-1c1-3.4 4-4.6 6.5-4.6 0 3.2-2.4 5.2-6.5 5.2Z"
-        fill="currentColor"
-        opacity={0.9}
-      />
-    </svg>
-  );
-}
-
-/**
- * The press-and-hold soil-fill button. Its own component so remounting it (via
- * a changing `key`) resets the one-shot hold hook after each flower is planted.
- */
-function PlantControl({
-  species,
-  reduceMotion,
-  onPlant,
-}: {
-  species: FlowerSpecies;
-  reduceMotion: boolean;
-  onPlant: () => void;
-}) {
-  const { progress, isHolding, handlers } = useHoldProgress({
-    durationMs: PLANT_DURATION_MS,
-    onComplete: () => {
-      haptic([10, 30]);
-      onPlant();
-    },
-  });
-
-  return (
-    <button
-      type="button"
-      {...handlers}
-      aria-label={`Press and hold to plant a ${FLOWER_LABEL[species]}`}
-      className="relative flex h-14 w-52 touch-none items-center justify-center gap-2 overflow-hidden rounded-full border border-white/30 bg-black/35 text-sm font-medium text-white/90 backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
-    >
-      <span
-        aria-hidden
-        className="absolute inset-x-0 bottom-0"
-        style={{
-          height: `${progress * 100}%`,
-          background:
-            "linear-gradient(to top, color-mix(in srgb, var(--color-leaf) 55%, transparent), color-mix(in srgb, var(--color-leaf) 20%, transparent))",
-          transition: reduceMotion ? undefined : "height 0.09s linear",
-        }}
-      />
-      <Sprout className="relative h-5 w-5 text-leaf" />
-      <span className="relative">
-        {isHolding
-          ? copy.hub.garden.planting
-          : copy.hub.garden.plant(FLOWER_LABEL[species])}
-      </span>
-    </button>
-  );
-}
-
-/** The garden: a scenic sky and a grassy bank the lilies grow from. */
+/** The garden: a scenic sky and a grassy bed she scatters flowers across by tapping. */
 export function GardenTab() {
   const { nickname, blooms, streak, plantFlower } = useKeepsakes();
   const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState<GardenLily | null>(null);
   const [species, setSpecies] = useState<FlowerSpecies>("lily");
-  // Bumped after each plant so <PlantControl> remounts and the hold hook resets.
-  const [plantKey, setPlantKey] = useState(0);
 
   // The most recent bloom, if it opened today, gets the full grow-and-bloom.
   const today = todayKey();
@@ -92,9 +27,9 @@ export function GardenTab() {
       ? blooms[blooms.length - 1].id
       : null;
 
-  const handlePlant = () => {
-    plantFlower(species);
-    setPlantKey((key) => key + 1);
+  const handlePlant = (x: number, y: number) => {
+    haptic([10, 30]);
+    plantFlower(species, x, y);
   };
 
   return (
@@ -104,7 +39,9 @@ export function GardenTab() {
           blooms={blooms}
           freshId={freshId}
           emptyLine={copy.hub.garden.empty}
+          plantLabel={copy.hub.garden.plant(FLOWER_LABEL[species])}
           onOpen={setSelected}
+          onPlant={handlePlant}
         />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-gradient-to-b from-black/35 via-black/12 to-transparent" />
@@ -134,7 +71,7 @@ export function GardenTab() {
           </div>
         </motion.div>
 
-        {/* flower picker + press-and-hold plant control */}
+        {/* flower picker + a nudge to tap the bed */}
         <motion.div
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,12 +105,9 @@ export function GardenTab() {
               );
             })}
           </div>
-          <PlantControl
-            key={plantKey}
-            species={species}
-            reduceMotion={!!reduceMotion}
-            onPlant={handlePlant}
-          />
+          <p className="text-xs text-white/80 [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">
+            {copy.hub.garden.tap(FLOWER_LABEL[species])}
+          </p>
         </motion.div>
       </div>
 

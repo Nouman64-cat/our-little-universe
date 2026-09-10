@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type MouseEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { EASE_SOFT } from "@/lib/motion";
 import { hashString, skyPhase, sunProgress, type SkyPhase } from "@/lib/daily";
@@ -152,7 +152,7 @@ function Stem({
   );
 }
 
-/** One lily on a leafed stem, rooted in the grass. */
+/** One lily on a leafed stem, rooted in the grass at its spot in the bed. */
 function Flower({
   bloom,
   fresh,
@@ -223,17 +223,40 @@ interface GardenSceneProps {
   blooms: GardenLily[];
   freshId: string | null;
   emptyLine: string;
+  /** aria-label for the plantable bed ("plant a rose"). */
+  plantLabel: string;
   onOpen: (bloom: GardenLily) => void;
+  /** She tapped an empty spot in the bed — grow a flower there (each 0–1). */
+  onPlant: (x: number, y: number) => void;
 }
 
 /**
  * The garden itself: a sky that shifts with the actual time of day, a drifting
- * sun or moon, slow clouds, background shrubs, a grassy bank the lilies grow
- * out of, and a fringe of grass blades across the foreground. Every animation
- * drops to a still frame when motion is reduced.
+ * sun or moon, slow clouds, background shrubs, a grassy bank the flowers grow
+ * out of, and a fringe of grass blades across the foreground. The flowers are
+ * scattered naturally across the bed rather than lined up; tapping an empty
+ * patch of grass plants a new one right there. Every animation drops to a
+ * still frame when motion is reduced.
  */
-export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneProps) {
+export function GardenScene({
+  blooms,
+  freshId,
+  emptyLine,
+  plantLabel,
+  onOpen,
+  onPlant,
+}: GardenSceneProps) {
   const reduceMotion = useReducedMotion();
+
+  const handleBedClick = (event: MouseEvent<HTMLButtonElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const clamp = (v: number, lo: number, hi: number) =>
+      Math.min(hi, Math.max(lo, v));
+    const x = clamp((event.clientX - rect.left) / rect.width, 0.05, 0.95);
+    // top of the bed reads as the back of the border, bottom as the front
+    const y = clamp((event.clientY - rect.top) / rect.height, 0.06, 0.96);
+    onPlant(x, y);
+  };
 
   const { phase, scene, sun } = useMemo(() => {
     const now = new Date();
@@ -331,8 +354,8 @@ export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneP
         ))}
       </div>
 
-      {/* ground — anchored to the bottom; the bed sits just above the controls
-          and extra rows of flowers stack upward from there */}
+      {/* ground — anchored to the bottom; the planting bed sits just above the
+          controls, its flowers scattered across it like a real border */}
       <div
         className="absolute inset-x-0 bottom-0 flex flex-col justify-end rounded-t-[50%/46px] px-4 pt-10 pb-[calc(env(safe-area-inset-bottom)+11.5rem)]"
         style={{
@@ -341,35 +364,58 @@ export function GardenScene({ blooms, freshId, emptyLine, onOpen }: GardenSceneP
           minHeight: "54%",
         }}
       >
-        {/* shrubs along the back of the bed */}
-        <Bushes light={scene.bladeLight} dark={scene.bush} />
+        <div className="relative mx-auto h-[clamp(11rem,30vh,16rem)] w-full max-w-md">
+          {/* shrubs along the back of the bed */}
+          <Bushes light={scene.bladeLight} dark={scene.bush} />
 
-        {blooms.length > 0 ? (
-          <div className="relative mx-auto max-w-md">
-            <div className="flex flex-wrap items-end justify-center gap-x-1 gap-y-2">
-              {blooms.map((bloom) => (
+          {/* tap an empty patch of grass to plant a flower right there */}
+          <button
+            type="button"
+            aria-label={plantLabel}
+            onClick={handleBedClick}
+            className="absolute inset-0 z-0 rounded-[45%/22%] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/50"
+          />
+
+          {blooms.map((bloom) => {
+            // nearer the front → a touch bigger and layered over the ones behind
+            const depth = 0.76 + bloom.y * 0.36;
+            return (
+              <div
+                key={bloom.id}
+                className="absolute"
+                style={{
+                  left: `${6 + bloom.x * 88}%`,
+                  bottom: `${4 + (1 - bloom.y) * 52}%`,
+                  transform: `translateX(-50%) scale(${depth})`,
+                  transformOrigin: "bottom center",
+                  // depth order only, kept well below the note overlay (z-50)
+                  zIndex: 1 + Math.round(bloom.y * 24),
+                }}
+              >
                 <Flower
-                  key={bloom.id}
                   bloom={bloom}
                   fresh={bloom.id === freshId}
                   reduceMotion={!!reduceMotion}
                   shadow={scene.shadow}
                   onOpen={() => onOpen(bloom)}
                 />
-              ))}
-            </div>
-            {/* grass tufting up around the stems */}
-            <GrassFringe
-              light={scene.bladeLight}
-              dark={scene.bladeDark}
-              reduceMotion={!!reduceMotion}
-            />
-          </div>
-        ) : (
-          <p className="py-6 text-center text-sm text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
-            {emptyLine}
-          </p>
-        )}
+              </div>
+            );
+          })}
+
+          {/* grass tufting up around the stems */}
+          <GrassFringe
+            light={scene.bladeLight}
+            dark={scene.bladeDark}
+            reduceMotion={!!reduceMotion}
+          />
+
+          {blooms.length === 0 && (
+            <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
+              {emptyLine}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
