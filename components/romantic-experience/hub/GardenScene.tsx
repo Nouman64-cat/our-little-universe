@@ -7,7 +7,9 @@ import { clamp } from "@/lib/utils";
 import { usePanZoom } from "@/hooks/usePanZoom";
 import { hashString, skyPhase, sunProgress, type SkyPhase } from "@/lib/daily";
 import { FLOWER_LABEL } from "@/lib/flowers";
+import type { GardenDecor, PathStyle } from "@/lib/garden-decor";
 import { FlowerArt } from "../flowers";
+import { Fence, Gate, isOnPath, Pathway } from "../garden-decor";
 import type { LilyTone } from "../lily-shape";
 import type { GardenLily } from "./keepsake-context";
 
@@ -104,6 +106,63 @@ const STARS = [
   { x: "91%", y: "16%", r: 1.1, delay: 1.9 },
   { x: "17%", y: "31%", r: 1, delay: 2.6 },
 ] as const;
+
+/** How the bed maps a normalised (x, y) to on-screen pixels — mirrors the
+ *  inline style each planted flower gets further down, so spot-finding can
+ *  predict where a candidate position would actually land. */
+function bedPixel(x: number, y: number, width: number, height: number) {
+  return {
+    px: width * (0.06 + x * 0.88),
+    py: height * (0.04 + (1 - y) * 0.52),
+  };
+}
+
+/** Closest two flowers can sit before they'd render on top of one another. */
+const MIN_FLOWER_GAP_PX = 30;
+
+function collidesWithBloom(
+  x: number,
+  y: number,
+  blooms: GardenLily[],
+  rect: { width: number; height: number },
+): boolean {
+  const a = bedPixel(x, y, rect.width, rect.height);
+  return blooms.some((bloom) => {
+    const b = bedPixel(bloom.x, bloom.y, rect.width, rect.height);
+    return Math.hypot(a.px - b.px, a.py - b.py) < MIN_FLOWER_GAP_PX;
+  });
+}
+
+/**
+ * Resolve a tapped bed spot to somewhere plantable: never on the path, and
+ * never so close to an existing flower that the two would collapse into one
+ * clump. Starts at the tapped spot and spirals outward until it finds a free
+ * one, falling back to the tap itself if the bed is packed solid.
+ */
+function findPlantSpot(
+  x: number,
+  y: number,
+  blooms: GardenLily[],
+  rect: { width: number; height: number },
+  path: PathStyle,
+): { x: number; y: number } {
+  const isFree = (px: number, py: number) =>
+    !isOnPath(px, py, rect.width, rect.height, path) &&
+    !collidesWithBloom(px, py, blooms, rect);
+
+  if (isFree(x, y)) return { x, y };
+
+  for (let radius = 0.04; radius <= 0.5; radius += 0.04) {
+    for (let angle = 0; angle < 360; angle += 30) {
+      const rad = (angle * Math.PI) / 180;
+      const px = clamp(x + Math.cos(rad) * radius, 0.05, 0.95);
+      // the bed reads much shallower front-to-back than side-to-side
+      const py = clamp(y + Math.sin(rad) * radius * 0.6, 0.06, 0.96);
+      if (isFree(px, py)) return { x: px, y: py };
+    }
+  }
+  return { x, y };
+}
 
 /** A leafed lily stem, grown from the bed. Group-local, base at y = height. */
 function Stem({
@@ -232,6 +291,8 @@ interface GardenSceneProps {
   emptyLine: string;
   /** aria-label for the plantable bed ("plant a rose"). */
   plantLabel: string;
+  /** The fence / gate / path she's styled. */
+  decor: GardenDecor;
   onOpen: (bloom: GardenLily) => void;
   /** She tapped an empty spot in the bed — grow a flower there (each 0–1). */
   onPlant: (x: number, y: number) => void;
@@ -250,12 +311,27 @@ export function GardenScene({
   freshId,
   emptyLine,
   plantLabel,
+  decor,
   onOpen,
   onPlant,
 }: GardenSceneProps) {
   const reduceMotion = useReducedMotion();
   const bedRef = useRef<HTMLButtonElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Resolve a normalised bed position to a plantable one (off the path,
+   * clear of existing flowers) and hand it to the caller.
+   */
+  const resolveAndPlant = useCallback(
+    (x: number, y: number) => {
+      const rect = bedRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const spot = findPlantSpot(x, y, blooms, rect, decor.path);
+      onPlant(spot.x, spot.y);
+    },
+    [blooms, decor.path, onPlant],
+  );
 
   /** Turn a spot in the bed (client coords) into a normalised plant position. */
   const plantAt = useCallback(
@@ -265,9 +341,9 @@ export function GardenScene({
       const x = clamp((clientX - rect.left) / rect.width, 0.05, 0.95);
       // top of the bed reads as the back of the border, bottom as the front
       const y = clamp((clientY - rect.top) / rect.height, 0.06, 0.96);
-      onPlant(x, y);
+      resolveAndPlant(x, y);
     },
-    [onPlant],
+    [resolveAndPlant],
   );
 
   /**
@@ -408,8 +484,15 @@ export function GardenScene({
         }}
       >
         <div className="relative mx-auto h-[clamp(11rem,30vh,16rem)] w-full max-w-md">
+          {/* the path she's laid, on the ground under the flowers */}
+          <Pathway variant={decor.path} />
+
           {/* shrubs along the back of the bed */}
           <Bushes light={scene.bladeLight} dark={scene.bush} />
+
+          {/* her fence + gate along the back edge, behind the flowers */}
+          <Fence variant={decor.fence} />
+          <Gate variant={decor.gate} />
 
           {/* the plantable bed — pointer taps run through the scene's tap
               handler; this answers keyboard activation and is the rect that
@@ -419,7 +502,7 @@ export function GardenScene({
             type="button"
             aria-label={plantLabel}
             onClick={(event) => {
-              if (event.detail === 0) onPlant(0.5, 0.55);
+              if (event.detail === 0) resolveAndPlant(0.5, 0.55);
             }}
             className="absolute inset-0 z-0 rounded-[45%/22%] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/50"
           />

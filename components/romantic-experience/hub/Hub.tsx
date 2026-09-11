@@ -6,6 +6,7 @@ import type { HubTab } from "@/types/experience";
 import { BottomNav } from "./BottomNav";
 import { GameTab } from "./GameTab";
 import { GardenTab } from "./GardenTab";
+import { GardenDecorProvider } from "./garden-context";
 import { HouseProvider } from "./house-context";
 import { HouseTab } from "./house/HouseTab";
 import { HubBackdrop } from "./HubBackdrop";
@@ -38,7 +39,11 @@ export function Hub({ onReplayJourney }: HubProps) {
             )}
             {tab === "game" && <GameTab key="game" />}
             {tab === "sweets" && <SweetsTab key="sweets" />}
-            {tab === "garden" && <GardenTab key="garden" />}
+            {tab === "garden" && (
+              <GardenDecorProvider key="garden">
+                <GardenTab />
+              </GardenDecorProvider>
+            )}
             {tab === "teddy" && <TeddyTab key="teddy" />}
             {tab === "castle" && <CastleTab key="castle" />}
             {tab === "stars" && (
