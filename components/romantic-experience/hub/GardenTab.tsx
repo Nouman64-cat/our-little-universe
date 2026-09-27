@@ -25,7 +25,7 @@ const PARTS: GardenPart[] = ["fence", "gate", "path"];
  *  gate and path she styles in "decorate" mode. */
 export function GardenTab() {
   const { nickname, blooms, streak, plantFlower } = useKeepsakes();
-  const { decor, resetDecor } = useGardenDecor();
+  const { decor, resetDecor, expand, canExpand } = useGardenDecor();
   const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState<GardenLily | null>(null);
   const [species, setSpecies] = useState<FlowerSpecies>("lily");
@@ -45,6 +45,11 @@ export function GardenTab() {
     plantFlower(species, x, y);
   };
 
+  const handleExpand = () => {
+    haptic([8, 24, 8]);
+    expand();
+  };
+
   const toggleEditing = useCallback(() => {
     haptic(6);
     setEditing((e) => !e);
@@ -60,8 +65,11 @@ export function GardenTab() {
           emptyLine={g.empty}
           plantLabel={g.plant(FLOWER_LABEL[species])}
           decor={decor}
+          canExpand={canExpand}
+          expandLabel={g.expand}
           onOpen={setSelected}
           onPlant={handlePlant}
+          onExpand={handleExpand}
         />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-gradient-to-b from-black/35 via-black/12 to-transparent" />
@@ -84,6 +92,11 @@ export function GardenTab() {
             <span className="rounded-full border border-white/25 bg-black/30 px-3 py-1 text-white/90 backdrop-blur-sm">
               {blooms.length} {blooms.length === 1 ? "flower" : "flowers"}
             </span>
+            {decor.plots > 1 && (
+              <span className="rounded-full border border-white/25 bg-black/30 px-3 py-1 text-white/90 backdrop-blur-sm">
+                {g.plots(decor.plots)}
+              </span>
+            )}
             {streak > 1 && (
               <span className="rounded-full border border-rose/40 bg-rose/25 px-3 py-1 text-white backdrop-blur-sm">
                 {streak} days in a row

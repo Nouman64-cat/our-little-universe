@@ -1,5 +1,6 @@
 import { daysBetween, todayKey } from "./daily";
 import { isFlowerSpecies, type FlowerSpecies } from "./flowers";
+import { MAX_PLOTS } from "./garden-decor";
 
 /** One garden flower — either the automatic daily bloom or one she planted. */
 export interface GardenBloom {
@@ -8,18 +9,19 @@ export interface GardenBloom {
   /** What she planted. Absent on the daily bloom and on pre-existing data → a lily. */
   species?: FlowerSpecies;
   /**
-   * Where it sits in the bed, each 0–1 (`x` left→right, `y` back→front). Set
-   * when she taps a spot to plant; absent on the daily bloom and older data,
+   * Where it sits in the bed: `x` left→right in plot units (0–1 is the home
+   * plot, 1–2 the next one she added …), `y` back→front 0–1. Set when she taps
+   * a spot to plant; absent on the daily bloom and older data,
    * which get a stable scattered position derived from the flower's id.
    */
   x?: number;
   y?: number;
 }
 
-/** A finite number clamped to 0–1, or `undefined` for anything else. */
-function unitOrUndefined(value: unknown): number | undefined {
+/** A finite number clamped to 0–`max`, or `undefined` for anything else. */
+function unitOrUndefined(value: unknown, max = 1): number | undefined {
   return typeof value === "number" && Number.isFinite(value)
-    ? Math.min(1, Math.max(0, value))
+    ? Math.min(max, Math.max(0, value))
     : undefined;
 }
 
@@ -77,7 +79,7 @@ export function loadState(): OluState {
         ? parsed.gardenBlooms.map((bloom) => ({
             ...bloom,
             species: isFlowerSpecies(bloom?.species) ? bloom.species : undefined,
-            x: unitOrUndefined(bloom?.x),
+            x: unitOrUndefined(bloom?.x, MAX_PLOTS),
             y: unitOrUndefined(bloom?.y),
           }))
         : [],

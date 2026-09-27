@@ -129,6 +129,9 @@ export const copy = {
       plant: (flower: string) => `plant a ${flower}`,
       tap: (flower: string) => `tap a patch of grass to plant a ${flower}`,
       empty: "tap the grass to plant your first flower",
+      /** The signpost at the far end of the bed that adds a plot. */
+      expand: "more land",
+      plots: (n: number) => `${n} plots · swipe to wander`,
       decorate: "decorate",
       done: "done",
       styleHint: "pick a piece to restyle",

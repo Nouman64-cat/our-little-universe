@@ -22,6 +22,7 @@ import {
 import type { Letter } from "@/lib/keepsakes";
 import { composeLetter, handwrittenLetter, isLetter } from "@/lib/letters";
 import type { FlowerSpecies } from "@/lib/flowers";
+import { MAX_PLOTS } from "@/lib/garden-decor";
 import {
   applyDailyVisit,
   loadState,
@@ -37,7 +38,7 @@ export interface GardenLily extends GardenBloom {
   note: string;
   label: string;
   species: FlowerSpecies;
-  /** Resolved bed position, each 0–1 (`x` left→right, `y` back→front). */
+  /** Resolved bed position (`x` in plot units left→right, `y` 0–1 back→front). */
   x: number;
   y: number;
 }
@@ -67,7 +68,7 @@ interface KeepsakeValue {
   streak: number;
   /**
    * Plant an extra flower of the given species, dated today, at the spot she
-   * tapped in the bed (`x`/`y` each 0–1, left→right / back→front).
+   * tapped in the bed (`x` in plot units left→right, `y` 0–1 back→front).
    */
   plantFlower: (species: FlowerSpecies, x: number, y: number) => void;
 
@@ -148,12 +149,18 @@ export function KeepsakeProvider({
 
   const plantFlower = useCallback(
     (species: FlowerSpecies, x: number, y: number) => {
-      const clamp = (v: number) => Math.min(1, Math.max(0, v));
+      const clamp = (v: number, max: number) => Math.min(max, Math.max(0, v));
       setState((current) => ({
         ...current,
         gardenBlooms: [
           ...current.gardenBlooms,
-          { date: today, kind: "planted", species, x: clamp(x), y: clamp(y) },
+          {
+            date: today,
+            kind: "planted",
+            species,
+            x: clamp(x, MAX_PLOTS),
+            y: clamp(y, 1),
+          },
         ],
       }));
     },

@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { EASE_SOFT } from "@/lib/motion";
 import { clamp } from "@/lib/utils";
 import { usePanZoom } from "@/hooks/usePanZoom";
 import { hashString, skyPhase, sunProgress, type SkyPhase } from "@/lib/daily";
 import { FLOWER_LABEL } from "@/lib/flowers";
-import type { GardenDecor, PathStyle } from "@/lib/garden-decor";
+import { bedUnits, type GardenDecor, type PathStyle } from "@/lib/garden-decor";
 import { FlowerArt } from "../flowers";
 import { Fence, Gate, isOnPath, Pathway } from "../garden-decor";
 import type { LilyTone } from "../lily-shape";
@@ -107,12 +107,18 @@ const STARS = [
   { x: "17%", y: "31%", r: 1, delay: 2.6 },
 ] as const;
 
-/** How the bed maps a normalised (x, y) to on-screen pixels — mirrors the
- *  inline style each planted flower gets further down, so spot-finding can
- *  predict where a candidate position would actually land. */
-function bedPixel(x: number, y: number, width: number, height: number) {
+/** One plot's width on screen and the bed's height, in px. */
+interface BedMetrics {
+  plotWidth: number;
+  height: number;
+}
+
+/** How the bed maps a flower's (x, y) — `x` in plot units — to pixels from
+ *  its left / top. Mirrors the inline style each flower gets further down, so
+ *  spot-finding can predict where a candidate position would actually land. */
+function bedPixel(x: number, y: number, { plotWidth, height }: BedMetrics) {
   return {
-    px: width * (0.06 + x * 0.88),
+    px: plotWidth * (0.06 + x * 0.88),
     py: height * (0.04 + (1 - y) * 0.52),
   };
 }
@@ -124,11 +130,11 @@ function collidesWithBloom(
   x: number,
   y: number,
   blooms: GardenLily[],
-  rect: { width: number; height: number },
+  bed: BedMetrics,
 ): boolean {
-  const a = bedPixel(x, y, rect.width, rect.height);
+  const a = bedPixel(x, y, bed);
   return blooms.some((bloom) => {
-    const b = bedPixel(bloom.x, bloom.y, rect.width, rect.height);
+    const b = bedPixel(bloom.x, bloom.y, bed);
     return Math.hypot(a.px - b.px, a.py - b.py) < MIN_FLOWER_GAP_PX;
   });
 }
@@ -143,19 +149,21 @@ function findPlantSpot(
   x: number,
   y: number,
   blooms: GardenLily[],
-  rect: { width: number; height: number },
+  bed: BedMetrics,
   path: PathStyle,
+  plots: number,
 ): { x: number; y: number } {
+  // the path lives in the home plot, so it's tested in that plot's frame
   const isFree = (px: number, py: number) =>
-    !isOnPath(px, py, rect.width, rect.height, path) &&
-    !collidesWithBloom(px, py, blooms, rect);
+    !isOnPath(0.06 + px * 0.88, py, bed.plotWidth, bed.height, path) &&
+    !collidesWithBloom(px, py, blooms, bed);
 
   if (isFree(x, y)) return { x, y };
 
   for (let radius = 0.04; radius <= 0.5; radius += 0.04) {
     for (let angle = 0; angle < 360; angle += 30) {
       const rad = (angle * Math.PI) / 180;
-      const px = clamp(x + Math.cos(rad) * radius, 0.05, 0.95);
+      const px = clamp(x + Math.cos(rad) * radius, 0.02, plots - 0.02);
       // the bed reads much shallower front-to-back than side-to-side
       const py = clamp(y + Math.sin(rad) * radius * 0.6, 0.06, 0.96);
       if (isFree(px, py)) return { x: px, y: py };
@@ -291,11 +299,18 @@ interface GardenSceneProps {
   emptyLine: string;
   /** aria-label for the plantable bed ("plant a rose"). */
   plantLabel: string;
-  /** The fence / gate / path she's styled. */
+  /** The fence / gate / path she's styled, and how many plots of land. */
   decor: GardenDecor;
+  /** Whether there's room to add another plot (shows the signpost). */
+  canExpand: boolean;
+  /** aria-label / caption for the "more land" signpost. */
+  expandLabel: string;
   onOpen: (bloom: GardenLily) => void;
-  /** She tapped an empty spot in the bed — grow a flower there (each 0–1). */
+  /** She tapped an empty spot in the bed — grow a flower there (`x` in plot
+   *  units, `y` 0–1). */
   onPlant: (x: number, y: number) => void;
+  /** She tapped the signpost at the far end — add a plot of land. */
+  onExpand: () => void;
 }
 
 /**
@@ -303,8 +318,10 @@ interface GardenSceneProps {
  * sun or moon, slow clouds, background shrubs, a grassy bank the flowers grow
  * out of, and a fringe of grass blades across the foreground. The flowers are
  * scattered naturally across the bed rather than lined up; tapping an empty
- * patch of grass plants a new one right there. Every animation drops to a
- * still frame when motion is reduced.
+ * patch of grass plants a new one right there. The bed spans `decor.plots`
+ * plots side by side — wider than the screen once she's added land, so she
+ * swipes along it — with a signpost at the far end that adds another. Every
+ * animation drops to a still frame when motion is reduced.
  */
 export function GardenScene({
   blooms,
@@ -312,12 +329,25 @@ export function GardenScene({
   emptyLine,
   plantLabel,
   decor,
+  canExpand,
+  expandLabel,
   onOpen,
   onPlant,
+  onExpand,
 }: GardenSceneProps) {
   const reduceMotion = useReducedMotion();
   const bedRef = useRef<HTMLButtonElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const worldRef = useRef<HTMLDivElement>(null);
+  const { plots } = decor;
+  const units = bedUnits(plots);
+
+  /** The bed's on-screen metrics (already scaled by the pan-zoom). */
+  const measureBed = useCallback(() => {
+    const rect = bedRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return { rect, plotWidth: rect.width / units, height: rect.height };
+  }, [units]);
 
   /**
    * Resolve a normalised bed position to a plantable one (off the path,
@@ -325,25 +355,30 @@ export function GardenScene({
    */
   const resolveAndPlant = useCallback(
     (x: number, y: number) => {
-      const rect = bedRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const spot = findPlantSpot(x, y, blooms, rect, decor.path);
+      const bed = measureBed();
+      if (!bed) return;
+      const spot = findPlantSpot(x, y, blooms, bed, decor.path, plots);
       onPlant(spot.x, spot.y);
     },
-    [blooms, decor.path, onPlant],
+    [blooms, decor.path, measureBed, onPlant, plots],
   );
 
   /** Turn a spot in the bed (client coords) into a normalised plant position. */
   const plantAt = useCallback(
     (clientX: number, clientY: number) => {
-      const rect = bedRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const x = clamp((clientX - rect.left) / rect.width, 0.05, 0.95);
+      const bed = measureBed();
+      if (!bed) return;
+      // invert the flower placement (`0.06 + x * 0.88` plot-widths in)
+      const x = clamp(
+        ((clientX - bed.rect.left) / bed.plotWidth - 0.06) / 0.88,
+        0.02,
+        plots - 0.02,
+      );
       // top of the bed reads as the back of the border, bottom as the front
-      const y = clamp((clientY - rect.top) / rect.height, 0.06, 0.96);
+      const y = clamp((clientY - bed.rect.top) / bed.height, 0.06, 0.96);
       resolveAndPlant(x, y);
     },
-    [resolveAndPlant],
+    [measureBed, plots, resolveAndPlant],
   );
 
   /**
@@ -353,9 +388,12 @@ export function GardenScene({
    */
   const handleTap = useCallback(
     (clientX: number, clientY: number) => {
-      const hit = document
-        .elementFromPoint(clientX, clientY)
-        ?.closest<HTMLElement>("[data-flower-id]");
+      const target = document.elementFromPoint(clientX, clientY);
+      if (target?.closest("[data-garden-expand]")) {
+        onExpand();
+        return;
+      }
+      const hit = target?.closest<HTMLElement>("[data-flower-id]");
       if (hit) {
         const bloom = blooms.find((b) => b.id === hit.dataset.flowerId);
         if (bloom) onOpen(bloom);
@@ -363,13 +401,29 @@ export function GardenScene({
       }
       plantAt(clientX, clientY);
     },
-    [blooms, onOpen, plantAt],
+    [blooms, onExpand, onOpen, plantAt],
   );
 
-  const { scale, viewportProps, worldStyle, zoomBy, reset } = usePanZoom(
-    viewportRef,
-    { minScale: 1, maxScale: 4, anchorY: 0.3, onTap: handleTap },
-  );
+  const { scale, x: panX, viewportProps, worldStyle, zoomBy, reset, panToEnd } =
+    usePanZoom(viewportRef, {
+      minScale: 1,
+      maxScale: 4,
+      anchorY: 0.3,
+      worldRef,
+      onTap: handleTap,
+    });
+
+  // New land → slide over to show it (after the wider bed has laid out).
+  const shownPlots = useRef(plots);
+  useEffect(() => {
+    if (plots <= shownPlots.current) {
+      shownPlots.current = plots;
+      return;
+    }
+    shownPlots.current = plots;
+    const frame = requestAnimationFrame(panToEnd);
+    return () => cancelAnimationFrame(frame);
+  }, [plots, panToEnd]);
 
   const { phase, scene, sun } = useMemo(() => {
     const now = new Date();
@@ -393,9 +447,11 @@ export function GardenScene({
       ref={viewportRef}
       {...viewportProps}
       className="absolute inset-0 touch-none select-none overflow-hidden"
+      // `cqw` below = this viewport's width
+      style={{ containerType: "inline-size" }}
     >
-    <div className="absolute inset-0 origin-center" style={worldStyle}>
-      {/* sky */}
+      {/* sky — outside the pan-zoom world, so it stays put like a real sky
+          while she swipes along the garden */}
       <div className="absolute inset-0" style={{ background: scene.sky }} />
 
       {/* sky band — celestial elements live here so they stay put as the
@@ -473,6 +529,18 @@ export function GardenScene({
         ))}
       </div>
 
+    {/* the world: ground + bed. One plot fits the screen; each added plot
+        makes it wider, left-aligned so the home plot is where she starts. */}
+    <div
+      ref={worldRef}
+      className="absolute inset-y-0 left-0 origin-center"
+      style={{
+        ...worldStyle,
+        ["--plot" as string]: "min(100cqw - 2rem, 28rem)",
+        width: `max(100cqw, calc(var(--plot) * ${units} + 2rem))`,
+      }}
+    >
+
       {/* ground — anchored to the bottom; the planting bed sits just above the
           controls, its flowers scattered across it like a real border */}
       <div
@@ -483,16 +551,48 @@ export function GardenScene({
           minHeight: "54%",
         }}
       >
-        <div className="relative mx-auto h-[clamp(11rem,30vh,16rem)] w-full max-w-md">
-          {/* the path she's laid, on the ground under the flowers */}
-          <Pathway variant={decor.path} />
+        <div
+          className="relative mx-auto h-[clamp(11rem,30vh,16rem)]"
+          style={{ width: `calc(var(--plot) * ${units})` }}
+        >
+          {/* the home plot — gate, path and the first-flower hint live here */}
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0"
+            style={{ width: `${100 / units}%` }}
+          >
+            {/* the path she's laid, on the ground under the flowers */}
+            <Pathway variant={decor.path} />
+            <Gate variant={decor.gate} />
+            {blooms.length === 0 && (
+              <p className="absolute inset-x-0 bottom-8 z-30 text-center text-sm text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
+                {emptyLine}
+              </p>
+            )}
+          </div>
 
-          {/* shrubs along the back of the bed */}
-          <Bushes light={scene.bladeLight} dark={scene.bush} />
+          {/* shrubs along the back of each plot */}
+          {Array.from({ length: plots }, (_, i) => (
+            <div
+              key={i}
+              className="pointer-events-none absolute inset-y-0"
+              style={{
+                left: `${((0.88 * i) / units) * 100}%`,
+                width: `${100 / units}%`,
+                transform: i % 2 === 1 ? "scaleX(-1)" : undefined,
+              }}
+            >
+              <Bushes light={scene.bladeLight} dark={scene.bush} />
+            </div>
+          ))}
 
-          {/* her fence + gate along the back edge, behind the flowers */}
-          <Fence variant={decor.fence} />
-          <Gate variant={decor.gate} />
+          {/* her fence along the back edge, behind the flowers, opening
+              for the gate in the home plot */}
+          <Fence variant={decor.fence} gapAt={`${(0.5 / units) * 100}%`} />
+
+          {/* the far end: a little signpost that adds another plot */}
+          {canExpand && (
+            <ExpandSign label={expandLabel} onExpand={onExpand} />
+          )}
 
           {/* the plantable bed — pointer taps run through the scene's tap
               handler; this answers keyboard activation and is the rect that
@@ -516,7 +616,7 @@ export function GardenScene({
                 data-flower-id={bloom.id}
                 className="absolute"
                 style={{
-                  left: `${6 + bloom.x * 88}%`,
+                  left: `${((0.06 + bloom.x * 0.88) / units) * 100}%`,
                   bottom: `${4 + (1 - bloom.y) * 52}%`,
                   transform: `translateX(-50%) scale(${depth})`,
                   transformOrigin: "bottom center",
@@ -535,18 +635,23 @@ export function GardenScene({
             );
           })}
 
-          {/* grass tufting up around the stems */}
-          <GrassFringe
-            light={scene.bladeLight}
-            dark={scene.bladeDark}
-            reduceMotion={!!reduceMotion}
-          />
-
-          {blooms.length === 0 && (
-            <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/85 drop-shadow-[0_1px_4px_rgba(0,0,0,0.35)]">
-              {emptyLine}
-            </p>
-          )}
+          {/* grass tufting up around the stems, one fringe per plot */}
+          {Array.from({ length: plots }, (_, i) => (
+            <div
+              key={i}
+              className="pointer-events-none absolute inset-y-0"
+              style={{
+                left: `${((0.88 * i) / units) * 100}%`,
+                width: `${100 / units}%`,
+              }}
+            >
+              <GrassFringe
+                light={scene.bladeLight}
+                dark={scene.bladeDark}
+                reduceMotion={!!reduceMotion}
+              />
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -554,6 +659,7 @@ export function GardenScene({
 
     <ZoomControls
       scale={scale}
+      away={scale > 1.01 || panX < -4}
       onZoomIn={() => zoomBy(1.6)}
       onZoomOut={() => zoomBy(1 / 1.6)}
       onReset={reset}
@@ -565,11 +671,14 @@ export function GardenScene({
 /** ＋ / − / reset stack, floated top-left over the scene (outside the zoom world). */
 function ZoomControls({
   scale,
+  away,
   onZoomIn,
   onZoomOut,
   onReset,
 }: {
   scale: number;
+  /** Zoomed in or swiped along — offer the way back to the gate. */
+  away: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
@@ -596,17 +705,46 @@ function ZoomControls({
       >
         −
       </button>
-      {scale > 1.01 && (
+      {away && (
         <button
           type="button"
           onClick={onReset}
-          aria-label="Reset zoom"
+          aria-label="Back to the gate"
           className={`${btn} text-[10px] uppercase tracking-wide`}
         >
           1×
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * A little wooden signpost at the far right end of the bed — tapping it adds
+ * another plot of land. Pointer taps come through the scene's pan-zoom tap
+ * handler (`data-garden-expand`); `onClick` only answers the keyboard.
+ */
+function ExpandSign({ label, onExpand }: { label: string; onExpand: () => void }) {
+  return (
+    <button
+      type="button"
+      data-garden-expand
+      onClick={(event) => {
+        if (event.detail === 0) onExpand();
+      }}
+      aria-label={label}
+      className="absolute right-1 top-[18%] z-30 flex flex-col items-center rounded-xl p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/60"
+    >
+      <svg width={74} height={70} viewBox="0 0 74 70" aria-hidden>
+        <rect x={34} y={24} width={6} height={46} rx={2} fill="#8a6a45" />
+        <path d="M6 8 H60 L70 20 L60 32 H6 Z" fill="#e8d5b0" stroke="#a88659" strokeWidth={2} />
+        <path d="M22 20 H48 M35 13 V27" stroke="#6b8f4e" strokeWidth={4} strokeLinecap="round" />
+        <ellipse cx={37} cy={68} rx={14} ry={3} fill="rgba(0,0,0,0.2)" />
+      </svg>
+      <span className="-mt-1 whitespace-nowrap rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+        {label}
+      </span>
+    </button>
   );
 }
 

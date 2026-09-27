@@ -11,6 +11,7 @@ import {
 } from "react";
 import {
   DEFAULT_DECOR,
+  MAX_PLOTS,
   loadGardenDecor,
   saveGardenDecor,
   type FenceStyle,
@@ -24,8 +25,11 @@ interface GardenDecorValue {
   setFence: (id: FenceStyle) => void;
   setGate: (id: GateStyle) => void;
   setPath: (id: PathStyle) => void;
-  /** Back to the starter fence / gate / path. */
+  /** Back to the starter fence / gate / path (the land she's added stays). */
   resetDecor: () => void;
+  /** Add one more plot of land to the right, up to `MAX_PLOTS`. */
+  expand: () => void;
+  canExpand: boolean;
 }
 
 const GardenDecorContext = createContext<GardenDecorValue | null>(null);
@@ -51,11 +55,29 @@ export function GardenDecorProvider({ children }: { children: ReactNode }) {
   const setPath = useCallback((id: PathStyle) => {
     setDecor((d) => (d.path === id ? d : { ...d, path: id }));
   }, []);
-  const resetDecor = useCallback(() => setDecor({ ...DEFAULT_DECOR }), []);
+  // Resetting restyles the structure only — shrinking the land would strand
+  // the flowers planted out there.
+  const resetDecor = useCallback(
+    () => setDecor((d) => ({ ...DEFAULT_DECOR, plots: d.plots })),
+    [],
+  );
+  const expand = useCallback(() => {
+    setDecor((d) =>
+      d.plots >= MAX_PLOTS ? d : { ...d, plots: d.plots + 1 },
+    );
+  }, []);
 
   const value = useMemo<GardenDecorValue>(
-    () => ({ decor, setFence, setGate, setPath, resetDecor }),
-    [decor, setFence, setGate, setPath, resetDecor],
+    () => ({
+      decor,
+      setFence,
+      setGate,
+      setPath,
+      resetDecor,
+      expand,
+      canExpand: decor.plots < MAX_PLOTS,
+    }),
+    [decor, setFence, setGate, setPath, resetDecor, expand],
   );
 
   return (

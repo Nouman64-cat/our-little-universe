@@ -115,8 +115,17 @@ export function FenceRun({
   );
 }
 
-/** Two fence runs with a gap in the middle for the gate. Scene wrapper. */
-export function Fence({ variant }: { variant: FenceStyle }) {
+/**
+ * Two fence runs with a gap for the gate. Scene wrapper. `gapAt` is the gate's
+ * centre as a CSS length/percentage of the bed (the middle by default).
+ */
+export function Fence({
+  variant,
+  gapAt = "50%",
+}: {
+  variant: FenceStyle;
+  gapAt?: string;
+}) {
   if (variant === "none") return null;
   return (
     <div
@@ -127,12 +136,12 @@ export function Fence({ variant }: { variant: FenceStyle }) {
       <FenceRun
         variant={variant}
         className="absolute left-0"
-        style={{ right: "calc(50% + 42px)" }}
+        style={{ right: `calc(100% - ${gapAt} + 42px)` }}
       />
       <FenceRun
         variant={variant}
         className="absolute right-0"
-        style={{ left: "calc(50% + 42px)" }}
+        style={{ left: `calc(${gapAt} + 42px)` }}
       />
     </div>
   );

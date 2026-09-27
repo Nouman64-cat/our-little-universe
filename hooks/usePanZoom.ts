@@ -28,6 +28,12 @@ interface PanZoomOptions {
    */
   anchorY?: number;
   /**
+   * The transformed "world" element, when it can be wider than the viewport
+   * (left-aligned inside it). Its width sets how far she can pan sideways even
+   * at 1×. Omit for a world exactly the viewport's size.
+   */
+  worldRef?: RefObject<HTMLDivElement | null>;
+  /**
    * A press that never became a drag or pinch — treat it as a tap at these
    * client coordinates (e.g. plant a flower / open a note).
    */
@@ -36,6 +42,8 @@ interface PanZoomOptions {
 
 interface PanZoom {
   scale: number;
+  /** Horizontal pan offset in px (0 = left edge / centred). */
+  x: number;
   /** True while a finger/mouse gesture is in progress (kills the CSS easing). */
   gesturing: boolean;
   /** Spread onto the clipping viewport element (give it `touch-none select-none`). */
@@ -50,8 +58,10 @@ interface PanZoom {
   worldStyle: CSSProperties;
   /** Multiply the current zoom, anchored on the viewport centre. */
   zoomBy: (factor: number) => void;
-  /** Back to 1×, centred. */
+  /** Back to 1×, at the world's left edge (centred when it fits). */
   reset: () => void;
+  /** Slide to the far right of a wide world, keeping the zoom. */
+  panToEnd: () => void;
 }
 
 const TAP_SLOP = 8; // px of travel still allowed for a press to count as a tap
@@ -67,7 +77,7 @@ const TAP_TIME = 500; // ms
  */
 export function usePanZoom(
   viewportRef: RefObject<HTMLDivElement | null>,
-  { minScale = 1, maxScale = 4, anchorY = 0, onTap }: PanZoomOptions,
+  { minScale = 1, maxScale = 4, anchorY = 0, worldRef, onTap }: PanZoomOptions,
 ): PanZoom {
   const [transform, setTransform] = useState<Transform>({ scale: 1, x: 0, y: 0 });
   const [gesturing, setGesturing] = useState(false);
@@ -92,16 +102,27 @@ export function usePanZoom(
     setTransform(next);
   }, []);
 
+  /**
+   * The world's size, plus how far its centre (the transform origin) sits
+   * right of the viewport's centre — zoom anchoring has to correct for it.
+   */
+  const measure = useCallback(() => {
+    const vw = viewportRef.current?.clientWidth ?? 0;
+    const vh = viewportRef.current?.clientHeight ?? 0;
+    const ww = Math.max(vw, worldRef?.current?.offsetWidth ?? vw);
+    return { vw, vh, ww, dx: (ww - vw) / 2 };
+  }, [viewportRef, worldRef]);
+
   const clampTranslate = useCallback(
     (x: number, y: number, scale: number) => {
-      const vp = viewportRef.current;
-      const vw = vp?.clientWidth ?? 0;
-      const vh = vp?.clientHeight ?? 0;
-      const maxX = Math.max(0, ((scale - 1) * vw) / 2);
+      const { vw, vh, ww } = measure();
+      // keep the (scaled) world covering the viewport edge to edge
+      const minX = Math.min(0, vw - (ww * (1 + scale)) / 2);
+      const maxX = Math.max(0, (ww * (scale - 1)) / 2);
       const maxY = Math.max(0, ((scale - 1) * vh) / 2);
-      return { x: clamp(x, -maxX, maxX), y: clamp(y, -maxY, maxY) };
+      return { x: clamp(x, minX, maxX), y: clamp(y, -maxY, maxY) };
     },
-    [viewportRef],
+    [measure],
   );
 
   /** (Re)snapshot the gesture from whatever pointers are currently down. */
@@ -171,7 +192,8 @@ export function usePanZoom(
           maxScale,
         );
         const ratio = scale / snap.transform.scale;
-        const x = mid.x - (snap.mid.x - snap.transform.x) * ratio;
+        const { dx } = measure();
+        const x = mid.x - dx - (snap.mid.x - dx - snap.transform.x) * ratio;
         const y = mid.y - (snap.mid.y - snap.transform.y) * ratio;
         snap.moved = true;
         apply({ scale, ...clampTranslate(x, y, scale) });
@@ -188,7 +210,7 @@ export function usePanZoom(
         ...clampTranslate(snap.transform.x + dx, snap.transform.y + dy, scale),
       });
     },
-    [apply, clampTranslate, minScale, maxScale, viewportRef],
+    [apply, clampTranslate, measure, minScale, maxScale, viewportRef],
   );
 
   const endPointer = useCallback(
@@ -225,22 +247,27 @@ export function usePanZoom(
 
   const zoomBy = useCallback(
     (factor: number) => {
-      const vh = viewportRef.current?.clientHeight ?? 0;
+      const { vh, dx } = measure();
       const my = vh * anchorY;
       const t = transformRef.current;
       const scale = clamp(t.scale * factor, minScale, maxScale);
       const ratio = scale / t.scale;
       apply({
         scale,
-        ...clampTranslate(t.x * ratio, my - (my - t.y) * ratio, scale),
+        ...clampTranslate(-dx - (-dx - t.x) * ratio, my - (my - t.y) * ratio, scale),
       });
     },
-    [apply, clampTranslate, minScale, maxScale, anchorY, viewportRef],
+    [apply, clampTranslate, measure, minScale, maxScale, anchorY],
   );
 
   const reset = useCallback(() => {
-    apply({ scale: 1, x: 0, y: 0 });
-  }, [apply]);
+    apply({ scale: 1, ...clampTranslate(0, 0, 1) });
+  }, [apply, clampTranslate]);
+
+  const panToEnd = useCallback(() => {
+    const t = transformRef.current;
+    apply({ scale: t.scale, ...clampTranslate(-Infinity, t.y, t.scale) });
+  }, [apply, clampTranslate]);
 
   const onWheel = useCallback(
     (event: ReactWheelEvent) => {
@@ -255,20 +282,22 @@ export function usePanZoom(
       const factor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
       const scale = clamp(t.scale * factor, minScale, maxScale);
       const ratio = scale / t.scale;
+      const { dx } = measure();
       apply({
         scale,
         ...clampTranslate(
-          m.x - (m.x - t.x) * ratio,
+          m.x - dx - (m.x - dx - t.x) * ratio,
           m.y - (m.y - t.y) * ratio,
           scale,
         ),
       });
     },
-    [apply, clampTranslate, minScale, maxScale, viewportRef],
+    [apply, clampTranslate, measure, minScale, maxScale, viewportRef],
   );
 
   return {
     scale: transform.scale,
+    x: transform.x,
     gesturing,
     viewportProps: {
       onPointerDown,
@@ -285,5 +314,6 @@ export function usePanZoom(
     },
     zoomBy,
     reset,
+    panToEnd,
   };
 }

@@ -41,12 +41,36 @@ export interface GardenDecor {
   fence: FenceStyle;
   gate: GateStyle;
   path: PathStyle;
+  /**
+   * How many plots of land the garden spans, left → right. Plot 0 is the home
+   * plot with the gate and path; each one she adds extends the bed sideways.
+   */
+  plots: number;
 }
+
+/** The most land the garden can grow to. */
+export const MAX_PLOTS = 10;
+
+/**
+ * The bed's width in plot-widths. A flower at `x` (0 … plots, in plot units)
+ * sits `0.06 + x * 0.88` plot-widths from the bed's left edge — the same
+ * margins the single-plot bed always had — so adding land to the right never
+ * moves a flower that's already planted.
+ */
+export function bedUnits(plots: number): number {
+  return 0.12 + 0.88 * plots;
+}
+
+export const clampPlots = (v: unknown): number =>
+  typeof v === "number" && Number.isFinite(v)
+    ? Math.min(MAX_PLOTS, Math.max(1, Math.round(v)))
+    : 1;
 
 export const DEFAULT_DECOR: GardenDecor = {
   fence: "picket",
   gate: "arch",
   path: "stone",
+  plots: 1,
 };
 
 const FENCE_IDS = new Set<string>(FENCE_OPTIONS.map((o) => o.id));
@@ -72,6 +96,7 @@ export function loadGardenDecor(): GardenDecor {
       fence: isFenceStyle(parsed.fence) ? parsed.fence : DEFAULT_DECOR.fence,
       gate: isGateStyle(parsed.gate) ? parsed.gate : DEFAULT_DECOR.gate,
       path: isPathStyle(parsed.path) ? parsed.path : DEFAULT_DECOR.path,
+      plots: clampPlots(parsed.plots),
     };
   } catch {
     return { ...DEFAULT_DECOR };
