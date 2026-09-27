@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { copy } from "@/lib/config";
+import type { Letter } from "@/lib/keepsakes";
 import { EASE_SOFT } from "@/lib/motion";
 import { haptic } from "@/lib/utils";
 import { useKeepsakes } from "./keepsake-context";
@@ -12,35 +13,33 @@ import { TabScreen } from "./ui/TabScreen";
 
 const c = copy.hub.us;
 
+/** The box always looks full — there's always another letter coming. */
+const SEALED_IN_BOX = 6;
+
 export function UsTab() {
   const reduceMotion = useReducedMotion();
   const {
-    letters,
-    lettersTotal,
-    nextLetterIndex,
+    nextLetter,
     letterWaiting,
     lettersReadCount,
     openTodaysLetter,
   } = useKeepsakes();
 
-  const [reading, setReading] = useState<number | null>(null);
+  // A snapshot of the opened letter — the context moves on to tomorrow's.
+  const [reading, setReading] = useState<Letter | null>(null);
   const [revealKey, setRevealKey] = useState(0);
 
-  const sealed = lettersTotal - lettersReadCount;
+  const ready = letterWaiting && nextLetter !== null;
 
   const handleOpen = () => {
-    if (!letterWaiting || nextLetterIndex === null) return;
+    if (!ready) return;
     haptic([6, 22, 8]);
-    setReading(nextLetterIndex);
+    setReading(nextLetter);
     setRevealKey((k) => k + 1);
     openTodaysLetter();
   };
 
-  const caption = letterWaiting
-    ? c.waiting
-    : nextLetterIndex === null
-      ? c.empty
-      : c.comeBack;
+  const caption = ready ? c.waiting : letterWaiting ? c.sealing : c.comeBack;
 
   return (
     <TabScreen title={c.title} subtitle={c.since}>
@@ -48,13 +47,13 @@ export function UsTab() {
         <button
           type="button"
           onClick={handleOpen}
-          disabled={!letterWaiting}
+          disabled={!ready}
           aria-label={c.title}
           className="w-full max-w-[22rem] rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose/50 disabled:cursor-default"
         >
           <LetterBox
-            sealed={sealed}
-            waiting={letterWaiting}
+            sealed={SEALED_IN_BOX}
+            waiting={ready}
             reduceMotion={!!reduceMotion}
             onOpen={handleOpen}
           />
@@ -71,11 +70,10 @@ export function UsTab() {
         </motion.p>
 
         <p className="mt-1 text-xs text-ink-faint" suppressHydrationWarning>
-          {sealed > 0 && <span>{c.sealed(sealed)} · </span>}
-          {c.progress(lettersReadCount, lettersTotal)}
+          {c.progress(lettersReadCount)}
         </p>
 
-        {letterWaiting && (
+        {ready && (
           <motion.button
             type="button"
             onClick={handleOpen}
@@ -92,7 +90,7 @@ export function UsTab() {
       <LetterReveal
         open={reading !== null}
         revealKey={revealKey}
-        letter={reading !== null ? letters[reading] : null}
+        letter={reading}
         onClose={() => setReading(null)}
       />
     </TabScreen>

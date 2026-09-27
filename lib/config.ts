@@ -183,17 +183,17 @@ export const copy = {
     us: {
       title: "The letter box",
       since: "every day since may 5",
-      progress: (read: number, total: number) => `${read} of ${total} read`,
-      /** How many sealed letters are still in the box. */
-      sealed: (n: number) =>
-        n === 1 ? "one letter still sealed" : `${n} letters still sealed`,
+      progress: (read: number) =>
+        read === 0
+          ? "a new one every day"
+          : `${read} opened · a new one every day`,
       /** A new letter is available to open today. */
       waiting: "a new letter came for you",
+      /** Today's letter is still being written / fetched. */
+      sealing: "sealing today's letter…",
       open: "open it",
       /** Today's letter has already been opened. */
       comeBack: "that's today's. the next one comes tomorrow ♡",
-      /** Every letter has been read — none come back. */
-      empty: "you've read every letter i had ready. i'll keep writing.",
       /** Close button inside the open letter. */
       close: "close",
     },

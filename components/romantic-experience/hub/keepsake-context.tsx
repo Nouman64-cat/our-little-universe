@@ -19,7 +19,8 @@ import {
   pickByKey,
   todayKey,
 } from "@/lib/daily";
-import { LETTERS, type Letter } from "@/lib/keepsakes";
+import type { Letter } from "@/lib/keepsakes";
+import { composeLetter, handwrittenLetter, isLetter } from "@/lib/letters";
 import type { FlowerSpecies } from "@/lib/flowers";
 import {
   applyDailyVisit,
@@ -82,11 +83,12 @@ interface KeepsakeValue {
   randomGameWhispers: () => string[];
   randomResultReveal: () => string;
 
-  letters: Letter[];
-  /** Total letters Cheeku has written. */
-  lettersTotal: number;
-  /** The next sealed letter in order, or `null` once every one is opened. */
-  nextLetterIndex: number | null;
+  /**
+   * The next sealed letter, ready to read — `null` only while a new one is
+   * still being fetched. The box never runs out: after the hand-written ones,
+   * a fresh letter arrives every day.
+   */
+  nextLetter: Letter | null;
   /** True when a new letter can be opened today (one per day, none yet today). */
   letterWaiting: boolean;
   /** How many letters she has opened — they don't come back. */
@@ -166,14 +168,7 @@ export function KeepsakeProvider({
   const openTodaysLetter = useCallback(() => {
     setState((current) => {
       if (current.lastLetterDate === today) return current;
-      let next = -1;
-      for (let i = 0; i < LETTERS.length; i += 1) {
-        if (!current.readLetters.includes(i)) {
-          next = i;
-          break;
-        }
-      }
-      if (next === -1) return current;
+      const next = firstUnread(current.readLetters);
       return {
         ...current,
         readLetters: [...current.readLetters, next],
@@ -229,15 +224,42 @@ export function KeepsakeProvider({
     [state.gardenBlooms, content.lilies],
   );
 
-  const nextLetterIndex = useMemo(() => {
-    for (let i = 0; i < LETTERS.length; i += 1) {
-      if (!state.readLetters.includes(i)) return i;
-    }
-    return null;
-  }, [state.readLetters]);
+  const nextLetterIndex = useMemo(
+    () => firstUnread(state.readLetters),
+    [state.readLetters],
+  );
+  const letterWaiting = state.lastLetterDate !== today;
 
-  const letterWaiting =
-    nextLetterIndex !== null && state.lastLetterDate !== today;
+  // Past the hand-written letters, today's is fetched (written fresh on the
+  // server) as soon as it's waiting, so it's ready by the time she opens it.
+  const [fetchedLetter, setFetchedLetter] = useState<{
+    n: number;
+    letter: Letter;
+  } | null>(null);
+  const handwritten = handwrittenLetter(nextLetterIndex);
+  const needsFetch =
+    letterWaiting && !handwritten && fetchedLetter?.n !== nextLetterIndex;
+
+  useEffect(() => {
+    if (!needsFetch) return;
+    const n = nextLetterIndex;
+    const controller = new AbortController();
+    fetch(`/api/letter?n=${n}`, { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: unknown) => {
+        setFetchedLetter({ n, letter: isLetter(data) ? data : composeLetter(n) });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setFetchedLetter({ n, letter: composeLetter(n) });
+        }
+      });
+    return () => controller.abort();
+  }, [needsFetch, nextLetterIndex]);
+
+  const nextLetter =
+    handwritten ??
+    (fetchedLetter?.n === nextLetterIndex ? fetchedLetter.letter : null);
 
   const value = useMemo<KeepsakeValue>(
     () => ({
@@ -266,9 +288,7 @@ export function KeepsakeProvider({
       randomGameHint,
       randomGameWhispers,
       randomResultReveal,
-      letters: LETTERS,
-      lettersTotal: LETTERS.length,
-      nextLetterIndex,
+      nextLetter,
       letterWaiting,
       lettersReadCount: state.readLetters.length,
       openTodaysLetter,
@@ -286,7 +306,7 @@ export function KeepsakeProvider({
       state.takenSweets,
       takeSweet,
       refillJar,
-      nextLetterIndex,
+      nextLetter,
       letterWaiting,
       openTodaysLetter,
       blooms,
@@ -305,6 +325,13 @@ export function KeepsakeProvider({
   return (
     <KeepsakeContext.Provider value={value}>{children}</KeepsakeContext.Provider>
   );
+}
+
+/** The lowest letter number she hasn't opened yet. */
+function firstUnread(read: number[]): number {
+  let n = 0;
+  while (read.includes(n)) n += 1;
+  return n;
 }
 
 export function useKeepsakes(): KeepsakeValue {
